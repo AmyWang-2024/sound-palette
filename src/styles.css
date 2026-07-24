@@ -19,6 +19,7 @@
 html {
   min-width: 320px;
   min-height: 100%;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -28,6 +29,10 @@ body {
   background:
     radial-gradient(circle at 8% 2%, rgb(255 255 255 / 70%), transparent 32rem),
     linear-gradient(135deg, #f0ece5, #e9e2dc);
+}
+
+body.preview-open {
+  overflow: hidden;
 }
 
 button {
@@ -43,7 +48,11 @@ button:focus-visible {
   width: min(100%, 86rem);
   min-height: 100vh;
   margin: 0 auto;
-  padding: clamp(1rem, 2.5vw, 2.25rem);
+  padding:
+    max(clamp(1rem, 2.5vw, 2.25rem), env(safe-area-inset-top))
+    max(clamp(1rem, 2.5vw, 2.25rem), env(safe-area-inset-right))
+    max(clamp(1rem, 2.5vw, 2.25rem), env(safe-area-inset-bottom))
+    max(clamp(1rem, 2.5vw, 2.25rem), env(safe-area-inset-left));
 }
 
 .brand-bar {
@@ -505,12 +514,22 @@ button:focus-visible {
   min-height: 2.6rem;
   border: 1px dashed rgb(47 42 51 / 16%);
   border-radius: 0.8rem;
-  color: #8d868e;
-  background: transparent;
+  color: #514a53;
+  background: rgb(255 255 255 / 32%);
+  cursor: pointer;
 }
 
 .future-actions button:disabled {
-  cursor: not-allowed;
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.export-status {
+  min-height: 2.2rem;
+  margin: 0.75rem 0 0;
+  color: #756e77;
+  font-size: 0.68rem;
+  line-height: 1.55;
 }
 
 .privacy-footer {
@@ -519,6 +538,77 @@ button:focus-visible {
   font-size: 0.65rem;
   letter-spacing: 0.08em;
   text-align: center;
+}
+
+.export-preview {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  overflow-y: auto;
+  padding:
+    max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right))
+    max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+  background: rgb(32 28 34 / 72%);
+  place-items: center;
+  backdrop-filter: blur(12px);
+}
+
+.export-preview-card {
+  width: min(100%, 35rem);
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: 1.4rem;
+  background: #f5f0e9;
+  box-shadow: 0 2rem 6rem rgb(0 0 0 / 28%);
+}
+
+.preview-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.preview-heading h2 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.65rem;
+  font-weight: 400;
+}
+
+.preview-heading button {
+  min-width: 3.2rem;
+  min-height: 2.75rem;
+  border: 1px solid rgb(47 42 51 / 15%);
+  border-radius: 0.75rem;
+  color: #534c55;
+  background: transparent;
+  cursor: pointer;
+}
+
+.export-preview img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: min(64dvh, 45rem);
+  margin: 0 auto;
+  border-radius: 0.75rem;
+  box-shadow: 0 0.8rem 2rem rgb(45 38 42 / 14%);
+}
+
+.export-preview-card > p {
+  margin: 0.85rem 0;
+  color: #6d6670;
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.export-preview-card > .primary-button {
+  width: 100%;
 }
 
 @media (max-width: 58rem) {
@@ -539,7 +629,11 @@ button:focus-visible {
 
 @media (max-width: 36rem) {
   .product-shell {
-    padding: 0.75rem;
+    padding:
+      max(0.75rem, env(safe-area-inset-top))
+      max(0.75rem, env(safe-area-inset-right))
+      max(0.75rem, env(safe-area-inset-bottom))
+      max(0.75rem, env(safe-area-inset-left));
   }
 
   .brand-bar {
@@ -575,7 +669,7 @@ button:focus-visible {
   }
 
   .flow-screen {
-    min-height: 29rem;
+    min-height: max(29rem, 52dvh);
     padding: 1.4rem;
   }
 
@@ -605,11 +699,50 @@ button:focus-visible {
   }
 }
 
+@media (hover: hover) and (pointer: fine) {
+  .future-actions button:hover {
+    border-color: #5d5164;
+    background: rgb(255 255 255 / 62%);
+  }
+}
+
+@media (orientation: landscape) and (max-height: 34rem) and (max-width: 58rem) {
+  .experience-frame {
+    grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.9fr);
+  }
+
+  .visual-card {
+    min-height: calc(100dvh - 6.5rem);
+    border-right: 1px solid rgb(44 39 47 / 11%);
+    border-bottom: 0;
+  }
+
+  .flow-screen {
+    min-height: calc(100dvh - 6.5rem);
+    padding: 1.3rem;
+  }
+
+  .hero-copy,
+  .listen-progress-card,
+  .mood-grid {
+    margin-top: 1.25rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .primary-button:hover,
   .secondary-button:hover,
   .mood-option:hover,
   .mood-option[aria-pressed="true"] {
     transform: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

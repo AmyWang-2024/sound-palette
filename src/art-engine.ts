@@ -97,6 +97,15 @@ export class ArtEngine {
     this.#applyPalette()
   }
 
+  snapshot(): HTMLCanvasElement {
+    this.#renderFrame()
+
+    return this.application.renderer.extract.canvas({
+      target: this.application.stage,
+      antialias: true,
+    }) as HTMLCanvasElement
+  }
+
   destroy(): void {
     if (this.#destroyed) {
       return
@@ -240,7 +249,9 @@ export class ArtEngine {
     const activeParticleCount = Math.min(
       MAX_PARTICLES,
       Math.floor(
-        (10 + input.highEnergy * (MAX_PARTICLES - 10)) * profile.textureDensity,
+        (10 + input.highEnergy * (MAX_PARTICLES - 10)) *
+          profile.textureDensity *
+          (this.#reducedMotion ? 0.45 : 1),
       ),
     )
 

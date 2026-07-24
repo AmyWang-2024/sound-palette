@@ -1,6 +1,11 @@
 import './styles.css'
 import { AppController } from './app-controller'
 import { ArtEngine } from './art-engine'
+import {
+  canvasToPngBlob,
+  composeArtworkCard,
+  createExportFilename,
+} from './artwork-export'
 import { AudioEngine } from './audio-engine'
 import { MOOD_PROFILES } from './mood-profiles'
 import {
@@ -13,6 +18,7 @@ import {
 } from './sample-scenes'
 import { summaryToVisualInput } from './sound-summary'
 import { createArtworkTags } from './tag-rules'
+import { detectShareCapabilities, downloadBlob } from './share-export'
 import type { AudioFrame, Mood, SoundSummary, SoundVisualInput } from './types'
 import { DEFAULT_VISUAL_INPUT } from './visual-rules'
 
@@ -151,10 +157,12 @@ appRoot.innerHTML = `
             </button>
           </div>
           <div class="future-actions" aria-label="导出与分享">
-            <button type="button" disabled title="将在 M4 开放">保存图片</button>
-            <button type="button" disabled title="将在 M4 开放">分享</button>
+            <button id="save-artwork" type="button">保存图片</button>
+            <button id="share-artwork" type="button">分享</button>
           </div>
-          <p class="future-note">保存与分享将在下一阶段开放。</p>
+          <p class="export-status" id="export-status" role="status">
+            可生成 1080 × 1440 PNG；分享失败时仍可保存。
+          </p>
         </section>
       </div>
     </div>
@@ -162,6 +170,32 @@ appRoot.innerHTML = `
     <footer class="privacy-footer">
       不录音 · 不保存原始音频 · 不上传麦克风数据
     </footer>
+
+    <section
+      class="export-preview"
+      id="export-preview"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="export-preview-title"
+      hidden
+    >
+      <div class="export-preview-card">
+        <div class="preview-heading">
+          <div>
+            <p class="eyebrow">PNG 预览</p>
+            <h2 id="export-preview-title">保存你的声音画</h2>
+          </div>
+          <button id="close-preview" type="button" aria-label="关闭图片预览">关闭</button>
+        </div>
+        <img id="export-preview-image" alt="Sound Palette 导出卡片预览" />
+        <p id="export-preview-message">
+          长按图片保存，或使用系统分享。
+        </p>
+        <button class="primary-button" id="download-preview" type="button">
+          下载 PNG
+        </button>
+      </div>
+    </section>
   </main>
 `
 
@@ -200,6 +234,20 @@ const resultMood = requireElement<HTMLSpanElement>('#result-mood')
 const tagList = requireElement<HTMLUListElement>('#tag-list')
 const changeMoodButton = requireElement<HTMLButtonElement>('#change-mood')
 const listenAgainButton = requireElement<HTMLButtonElement>('#listen-again')
+const saveArtworkButton =
+  requireElement<HTMLButtonElement>('#save-artwork')
+const shareArtworkButton =
+  requireElement<HTMLButtonElement>('#share-artwork')
+const exportStatus = requireElement<HTMLParagraphElement>('#export-status')
+const exportPreview = requireElement<HTMLElement>('#export-preview')
+const exportPreviewImage =
+  requireElement<HTMLImageElement>('#export-preview-image')
+const exportPreviewMessage =
+  requireElement<HTMLParagraphElement>('#export-preview-message')
+const closePreviewButton =
+  requireElement<HTMLButtonElement>('#close-preview')
+const downloadPreviewButton =
+  requireElement<HTMLButtonElement>('#download-preview')
 const moodButtons = Array.from(
   appRoot.querySelectorAll<HTMLButtonElement>('[data-mood]'),
 )
@@ -219,6 +267,9 @@ let sampleStartedAt = 0
 let sampleFrames: AudioFrame[] = []
 let sampleSceneId: SampleSceneId = 'parkMorning'
 let sampleCompleting = false
+let cachedExportBlob: Blob | undefined
+let cachedExportFilename = ''
+let previewUrl: string | undefined
 
 function renderProgress(elapsedMs: number, durationMs: number): void {
   const safeDuration = Math.max(1, durationMs)
@@ -237,6 +288,166 @@ function renderVisualInput(input: SoundVisualInput): void {
     canvasCaption.textContent = `相对响度 ${Math.round(
       input.loudness * 100,
     )}% · 变化程度 ${Math.round(input.changeRate * 100)}%。只保留数值特征。`
+  }
+}
+
+function currentSourceLabel(): string {
+  return controller.source === 'sample'
+    ? `示例声景 · ${SAMPLE_SCENES[sampleSceneId].labelZh}`
+    : '你的声音画'
+}
+
+function closeExportPreview(): void {
+  exportPreview.hidden = true
+  document.body.classList.remove('preview-open')
+
+  if (previewUrl) {
+    URL.revokeObjectURL(previewUrl)
+    previewUrl = undefined
+  }
+
+  exportPreviewImage.removeAttribute('src')
+}
+
+function invalidateExport(): void {
+  cachedExportBlob = undefined
+  cachedExportFilename = ''
+
+  if (!exportPreview.hidden) {
+    closeExportPreview()
+  }
+}
+
+function showExportPreview(blob: Blob, message: string): void {
+  if (previewUrl) {
+    URL.revokeObjectURL(previewUrl)
+  }
+
+  previewUrl = URL.createObjectURL(blob)
+  exportPreviewImage.src = previewUrl
+  exportPreviewMessage.textContent = message
+  exportPreview.hidden = false
+  document.body.classList.add('preview-open')
+  closePreviewButton.focus()
+}
+
+function setExportBusy(busy: boolean): void {
+  saveArtworkButton.disabled = busy
+  shareArtworkButton.disabled = busy
+}
+
+async function getArtworkExport(): Promise<{
+  blob: Blob
+  filename: string
+}> {
+  if (cachedExportBlob) {
+    return {
+      blob: cachedExportBlob,
+      filename: cachedExportFilename,
+    }
+  }
+
+  const summary = controller.summary
+  const mood = controller.mood
+
+  if (!summary || !mood) {
+    throw new Error('声音画还没有准备好。')
+  }
+
+  setExportBusy(true)
+  exportStatus.textContent = '正在生成 1080 × 1440 PNG…'
+
+  try {
+    const artwork = engine.snapshot()
+    const card = composeArtworkCard({
+      artwork,
+      summary,
+      mood,
+      tags: createArtworkTags(summary, mood),
+      sourceLabel: currentSourceLabel(),
+    })
+    cachedExportBlob = await canvasToPngBlob(card)
+    cachedExportFilename = createExportFilename()
+
+    return {
+      blob: cachedExportBlob,
+      filename: cachedExportFilename,
+    }
+  } finally {
+    setExportBusy(false)
+  }
+}
+
+async function saveCurrentArtwork(): Promise<void> {
+  try {
+    const { blob, filename } = await getArtworkExport()
+    const capabilities = detectShareCapabilities(navigator)
+
+    if (capabilities.iosLike || capabilities.weChat) {
+      showExportPreview(
+        blob,
+        capabilities.weChat
+          ? '微信内置浏览器可能限制下载。请长按图片保存，或在 Safari / Chrome 中重新打开。'
+          : '请长按图片保存；也可以关闭预览后使用“分享”调用系统面板。',
+      )
+      exportStatus.textContent = 'PNG 已生成，可在预览中长按保存。'
+      return
+    }
+
+    downloadBlob(blob, filename)
+    exportStatus.textContent = `PNG 已生成并开始下载：${filename}`
+  } catch (error) {
+    exportStatus.textContent =
+      error instanceof Error ? error.message : '图片生成失败，请稍后重试。'
+  }
+}
+
+async function shareCurrentArtwork(): Promise<void> {
+  try {
+    const { blob, filename } = await getArtworkExport()
+    const capabilities = detectShareCapabilities(navigator)
+    const file =
+      typeof File === 'function'
+        ? new File([blob], filename, { type: 'image/png' })
+        : undefined
+    const canShareFile =
+      file &&
+      capabilities.canShareFiles &&
+      navigator.canShare?.({ files: [file] })
+
+    if (file && canShareFile) {
+      try {
+        await navigator.share({
+          title: 'Sound Palette · 声音调色盘',
+          text: '这是我此刻的声音画。',
+          files: [file],
+        })
+        exportStatus.textContent = '系统分享面板已完成。'
+        return
+      } catch {
+        showExportPreview(
+          blob,
+          '分享未完成，但作品仍然保留。可长按图片保存，或点击下方下载。',
+        )
+        exportStatus.textContent = '分享未完成，已打开保存预览。'
+        return
+      }
+    }
+
+    if (capabilities.iosLike || capabilities.weChat) {
+      showExportPreview(
+        blob,
+        '当前浏览器不支持文件分享。请长按图片保存，或在 Safari / Chrome 中重新打开。',
+      )
+      exportStatus.textContent = '当前浏览器不支持文件分享，已打开保存预览。'
+      return
+    }
+
+    downloadBlob(blob, filename)
+    exportStatus.textContent = '当前浏览器不支持文件分享，已改为下载 PNG。'
+  } catch (error) {
+    exportStatus.textContent =
+      error instanceof Error ? error.message : '分享准备失败，请稍后重试。'
   }
 }
 
@@ -269,12 +480,7 @@ function renderResult(): void {
   }
 
   const tags = createArtworkTags(summary, mood)
-  const source =
-    controller.source === 'sample'
-      ? `示例声景 · ${SAMPLE_SCENES[sampleSceneId].labelZh}`
-      : '你的声音画'
-
-  resultSource.textContent = source
+  resultSource.textContent = currentSourceLabel()
   resultMood.textContent = MOOD_PROFILES[mood].labelZh
   compositionValues.innerHTML = [
     compositionRow('基底声', summary.composition.base, 'base-fill'),
@@ -286,6 +492,8 @@ function renderResult(): void {
     <li><span>运动</span><strong>${tags.movement}</strong></li>
     <li><span>Mood</span><strong>${tags.mood}</strong></li>
   `
+  exportStatus.textContent =
+    '可生成 1080 × 1440 PNG；分享失败时仍可保存。'
   canvasCaption.textContent = summary.quiet
     ? `这是一段安静声景，三层构成保持为 0；Mood 为${MOOD_PROFILES[mood].labelZh}。`
     : `基底声 ${Math.round(
@@ -357,6 +565,7 @@ async function resetArtwork(summary: SoundSummary): Promise<void> {
 }
 
 async function finishSession(summary: SoundSummary): Promise<void> {
+  invalidateExport()
   await resetArtwork(summary)
   controller.completeListening(summary)
   renderProgress(summary.durationMs, SAMPLE_DURATION_MS)
@@ -472,6 +681,7 @@ moodButtons.forEach((button) => {
       return
     }
 
+    invalidateExport()
     engine.setMood(mood)
     moodButtons.forEach((option) =>
       option.setAttribute(
@@ -493,12 +703,48 @@ listenAgainButton.addEventListener('click', () => {
   void startMicrophoneSession()
 })
 
+saveArtworkButton.addEventListener('click', () => {
+  void saveCurrentArtwork()
+})
+
+shareArtworkButton.addEventListener('click', () => {
+  void shareCurrentArtwork()
+})
+
+closePreviewButton.addEventListener('click', () => {
+  closeExportPreview()
+  saveArtworkButton.focus()
+})
+
+downloadPreviewButton.addEventListener('click', () => {
+  if (cachedExportBlob) {
+    downloadBlob(cachedExportBlob, cachedExportFilename)
+    exportPreviewMessage.textContent =
+      '下载已开始。如果浏览器没有响应，请长按上方图片保存。'
+  }
+})
+
+exportPreview.addEventListener('click', (event) => {
+  if (event.target === exportPreview) {
+    closeExportPreview()
+    saveArtworkButton.focus()
+  }
+})
+
+document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && !exportPreview.hidden) {
+    closeExportPreview()
+    saveArtworkButton.focus()
+  }
+})
+
 brandHomeButton.addEventListener('click', () => {
   if (controller.state === 'listening') {
     return
   }
 
   controller.returnHome()
+  invalidateExport()
   engine.setInput(DEFAULT_VISUAL_INPUT)
   engine.setMood('neutral')
   renderState()
@@ -516,6 +762,7 @@ window.addEventListener(
     if (sampleAnimationId !== undefined) {
       cancelAnimationFrame(sampleAnimationId)
     }
+    closeExportPreview()
     void audioEngine.stop()
     engine.destroy()
   },
