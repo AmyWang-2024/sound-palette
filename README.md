@@ -3,8 +3,8 @@
 Sound Palette Web MVP v0.1 将环境声音的本地数值特征与用户选择的 Mood
 转化为轻微动态的抽象声音画。项目以 `CODEX_HANDOFF.md` 作为唯一需求与工程约束主文档。
 
-当前完成 M0 项目骨架：Vanilla TypeScript、Vite、PixiJS 空画布、四个基础页面状态和
-Vitest 配置。麦克风与声音分析尚未在 M0 接入。
+当前完成 M1 视觉沙盒：可通过五项模拟声音参数和三种 Mood 实时调整一幅由固定 seed
+生成的 PixiJS 抽象画。相同参数切换 Mood 时保留同一构图骨架。麦克风与声音分析尚未接入。
 
 ## Windows 本地运行
 
