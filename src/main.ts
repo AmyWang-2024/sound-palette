@@ -1,30 +1,24 @@
 import './styles.css'
 import { AppController } from './app-controller'
 import { ArtEngine } from './art-engine'
-import { AudioEngine, AudioEngineError } from './audio-engine'
+import { AudioEngine } from './audio-engine'
 import { MOOD_PROFILES } from './mood-profiles'
 import {
   createSampleFrame,
   createSampleSummary,
+  pickSampleScene,
   SAMPLE_DURATION_MS,
+  SAMPLE_SCENES,
+  type SampleSceneId,
 } from './sample-scenes'
-import type {
-  AudioFrame,
-  Mood,
-  SoundSummary,
-  SoundVisualInput,
-} from './types'
+import { summaryToVisualInput } from './sound-summary'
+import { createArtworkTags } from './tag-rules'
+import type { AudioFrame, Mood, SoundSummary, SoundVisualInput } from './types'
 import { DEFAULT_VISUAL_INPUT } from './visual-rules'
 
-const SANDBOX_SEED = 'sound-palette-m1-sandbox'
-
-const controls = [
-  { key: 'loudness', label: '相对响度' },
-  { key: 'lowEnergy', label: '低频 / 基底' },
-  { key: 'midEnergy', label: '中频 / 流动' },
-  { key: 'highEnergy', label: '高频 / 闪烁' },
-  { key: 'changeRate', label: '变化程度' },
-] as const
+const HOME_SEED = 'sound-palette-home'
+const MICROPHONE_FALLBACK_MESSAGE =
+  '当前浏览器无法使用麦克风，可以先体验示例；也可以在 Safari 或 Chrome 中重新打开。'
 
 const root = document.querySelector<HTMLDivElement>('#app')
 
@@ -32,251 +26,350 @@ if (!root) {
   throw new Error('Sound Palette app root was not found.')
 }
 
-const controller = new AppController()
-root.dataset.appState = controller.state
-root.innerHTML = `
-  <main class="sandbox-shell">
-    <header class="sandbox-header">
-      <div>
-        <p class="eyebrow">声音调色盘 · M2</p>
-        <h1>Sound Palette</h1>
-      </div>
-      <p class="sandbox-intro">
-        在设备本地聆听十秒，让实时声音特征驱动同一幅抽象构图。
-      </p>
+const appRoot = root
+
+appRoot.innerHTML = `
+  <main class="product-shell">
+    <header class="brand-bar">
+      <button class="brand-button" id="brand-home" type="button" aria-label="返回 Sound Palette 首页">
+        <span>Sound Palette</span>
+        <small>声音调色盘</small>
+      </button>
+      <span class="local-badge">只在本地分析</span>
     </header>
 
-    <div class="sandbox-grid">
-      <section class="art-card" aria-labelledby="art-title">
-        <div class="art-heading">
+    <div class="experience-frame">
+      <section class="visual-card" id="visual-card" aria-labelledby="artwork-title">
+        <div class="visual-heading">
           <div>
-            <p class="section-kicker">实时视觉沙盒</p>
-            <h2 id="art-title">此刻的声音形状</h2>
+            <p class="section-kicker" id="stage-kicker">声音的另一种样子</p>
+            <h2 id="artwork-title">听见，也看见</h2>
           </div>
-          <span class="live-badge">本地生成</span>
+          <span class="source-badge" id="source-badge">本地生成</span>
         </div>
-        <div id="art-canvas" class="art-canvas"></div>
-        <p class="canvas-summary">
-          画面只接收本地计算后的数值特征；不录音，不生成或上传音频文件。
+        <div class="art-canvas" id="art-canvas"></div>
+        <p class="canvas-caption" id="canvas-caption">
+          画面由示意数值生成。开始聆听前不会请求麦克风权限。
         </p>
       </section>
 
-      <form class="control-panel" id="visual-controls">
-        <div class="panel-heading">
-          <p class="section-kicker">开发控制面板</p>
-          <h2>声音参数</h2>
-          <p>点击后才请求麦克风；这里显示的是相对特征，不代表绝对分贝。</p>
-        </div>
-
-        <section class="listen-card" aria-labelledby="listen-title">
-          <div class="listen-status-row">
-            <strong id="listen-title">十秒本地分析</strong>
-            <span id="listen-countdown">10.0 秒</span>
+      <div class="flow-panel" aria-live="polite">
+        <section class="flow-screen home-screen" data-screen="home">
+          <div>
+            <p class="eyebrow">声音调色盘</p>
+            <h1>Sound Palette</h1>
+            <p class="chinese-name">声音调色盘</p>
           </div>
-          <progress id="listen-progress" max="100" value="0">0%</progress>
-          <div class="session-actions">
+          <p class="hero-copy">听见的，也可以被看见。</p>
+          <div class="primary-actions">
             <button class="primary-button" id="start-listening" type="button">
-              开始麦克风分析
+              开始聆听
             </button>
-            <button class="secondary-button" id="stop-listening" type="button" disabled>
-              停止
+            <button class="secondary-button" id="start-sample" type="button">
+              先体验示例
             </button>
           </div>
-          <p class="listen-message" id="listen-message">
-            准备就绪。无权限或非 HTTPS 时会自动进入示例模式。
+          <p class="privacy-callout">
+            声音只在你的设备上实时分析，不录音、不上传。
           </p>
-          <div class="summary-card" id="summary-card" hidden></div>
         </section>
 
-        <div class="sliders">
-          ${controls
-            .map(
-              ({ key, label }) => `
-                <label class="slider-control" for="${key}">
-                  <span>${label}</span>
-                  <output for="${key}" data-output="${key}">
-                    ${DEFAULT_VISUAL_INPUT[key].toFixed(2)}
-                  </output>
-                  <input
-                    id="${key}"
-                    name="${key}"
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value="${DEFAULT_VISUAL_INPUT[key]}"
-                  />
-                </label>
-              `,
-            )
-            .join('')}
-        </div>
+        <section class="flow-screen listening-screen" data-screen="listening" hidden>
+          <div>
+            <p class="eyebrow">10 秒本地分析</p>
+            <h1 class="step-title">正在聆听</h1>
+            <p class="step-copy" id="listening-copy">
+              让周围的声音自然发生，画面会从第一秒开始回应。
+            </p>
+          </div>
+          <div class="listen-progress-card">
+            <div class="progress-heading">
+              <span id="listen-source">麦克风</span>
+              <strong id="listen-countdown">10.0 秒</strong>
+            </div>
+            <progress id="listen-progress" max="100" value="0">0%</progress>
+            <p id="listen-message">正在请求麦克风权限…</p>
+          </div>
+          <button class="secondary-button stop-button" id="stop-listening" type="button">
+            停止
+          </button>
+        </section>
 
-        <fieldset class="mood-fieldset">
-          <legend>Mood</legend>
-          <div class="mood-options">
+        <section class="flow-screen mood-screen" data-screen="mood" hidden>
+          <div>
+            <p class="eyebrow">为声音上色</p>
+            <h1 class="step-title">此刻，你感觉怎么样？</h1>
+            <p class="step-copy">
+              Mood 只改变色彩与运动倾向，不会修改刚才的声音构成。
+            </p>
+          </div>
+          <div class="mood-grid" role="group" aria-label="选择此刻的 Mood">
             ${Object.values(MOOD_PROFILES)
               .map(
                 (profile) => `
-                  <label class="mood-choice">
-                    <input
-                      type="radio"
-                      name="mood"
-                      value="${profile.id}"
-                      ${profile.id === 'neutral' ? 'checked' : ''}
-                    />
-                    <span>${profile.labelZh}</span>
-                  </label>
+                  <button
+                    class="mood-option mood-option--${profile.id}"
+                    type="button"
+                    data-mood="${profile.id}"
+                    aria-pressed="false"
+                  >
+                    <span class="mood-swatch" aria-hidden="true"></span>
+                    <strong>${profile.labelZh}</strong>
+                  </button>
                 `,
               )
               .join('')}
           </div>
-        </fieldset>
+          <p class="choice-note">选择后立即生成你的声音画。</p>
+        </section>
 
-        <p class="privacy-note">
-          声音仅在内存中实时分析；不录音、不保存或上传原始音频。
-        </p>
-      </form>
+        <section class="flow-screen result-screen" data-screen="result" hidden>
+          <div class="result-heading">
+            <div>
+              <p class="eyebrow" id="result-source">你的声音画</p>
+              <h1 class="step-title">此刻的声景</h1>
+            </div>
+            <span class="mood-result" id="result-mood">不好不坏</span>
+          </div>
+
+          <section class="composition-card" aria-labelledby="composition-title">
+            <h2 id="composition-title">三层声景构成</h2>
+            <div id="composition-values"></div>
+          </section>
+
+          <section class="tags-card" aria-labelledby="tags-title">
+            <h2 id="tags-title">这幅作品的三个标签</h2>
+            <ul class="tag-list" id="tag-list"></ul>
+          </section>
+
+          <div class="result-actions">
+            <button class="primary-button" id="change-mood" type="button">
+              换一种 Mood
+            </button>
+            <button class="secondary-button" id="listen-again" type="button">
+              再听一次
+            </button>
+          </div>
+          <div class="future-actions" aria-label="导出与分享">
+            <button type="button" disabled title="将在 M4 开放">保存图片</button>
+            <button type="button" disabled title="将在 M4 开放">分享</button>
+          </div>
+          <p class="future-note">保存与分享将在下一阶段开放。</p>
+        </section>
+      </div>
     </div>
+
+    <footer class="privacy-footer">
+      不录音 · 不保存原始音频 · 不上传麦克风数据
+    </footer>
   </main>
 `
 
-const artCanvas = root.querySelector<HTMLDivElement>('#art-canvas')
-const form = root.querySelector<HTMLFormElement>('#visual-controls')
-const startButton = root.querySelector<HTMLButtonElement>('#start-listening')
-const stopButton = root.querySelector<HTMLButtonElement>('#stop-listening')
-const progress = root.querySelector<HTMLProgressElement>('#listen-progress')
-const countdown = root.querySelector<HTMLSpanElement>('#listen-countdown')
-const message = root.querySelector<HTMLParagraphElement>('#listen-message')
-const summaryCard = root.querySelector<HTMLDivElement>('#summary-card')
+function requireElement<T extends Element>(selector: string): T {
+  const element = appRoot.querySelector<T>(selector)
 
-if (
-  !artCanvas ||
-  !form ||
-  !startButton ||
-  !stopButton ||
-  !progress ||
-  !countdown ||
-  !message ||
-  !summaryCard
-) {
-  throw new Error('Sound Palette sandbox elements were not found.')
-}
-
-const visualControls = form
-const listenStartButton = startButton
-const listenStopButton = stopButton
-const listenProgress = progress
-const listenCountdown = countdown
-const listenMessage = message
-const resultSummary = summaryCard
-
-function readVisualInput(): SoundVisualInput {
-  const formData = new FormData(visualControls)
-
-  return {
-    loudness: Number(formData.get('loudness')),
-    lowEnergy: Number(formData.get('lowEnergy')),
-    midEnergy: Number(formData.get('midEnergy')),
-    highEnergy: Number(formData.get('highEnergy')),
-    changeRate: Number(formData.get('changeRate')),
-  }
-}
-
-function readMood(): Mood {
-  const value = new FormData(visualControls).get('mood')
-
-  if (value === 'good' || value === 'low') {
-    return value
+  if (!element) {
+    throw new Error(`Sound Palette element was not found: ${selector}`)
   }
 
-  return 'neutral'
+  return element
 }
 
-const engine = await ArtEngine.create(artCanvas, {
-  seed: SANDBOX_SEED,
+const visualCard = requireElement<HTMLElement>('#visual-card')
+const artCanvas = requireElement<HTMLDivElement>('#art-canvas')
+const artworkTitle = requireElement<HTMLHeadingElement>('#artwork-title')
+const stageKicker = requireElement<HTMLParagraphElement>('#stage-kicker')
+const sourceBadge = requireElement<HTMLSpanElement>('#source-badge')
+const canvasCaption = requireElement<HTMLParagraphElement>('#canvas-caption')
+const brandHomeButton = requireElement<HTMLButtonElement>('#brand-home')
+const startListeningButton =
+  requireElement<HTMLButtonElement>('#start-listening')
+const startSampleButton = requireElement<HTMLButtonElement>('#start-sample')
+const stopListeningButton =
+  requireElement<HTMLButtonElement>('#stop-listening')
+const listenProgress =
+  requireElement<HTMLProgressElement>('#listen-progress')
+const listenCountdown =
+  requireElement<HTMLSpanElement>('#listen-countdown')
+const listenSource = requireElement<HTMLSpanElement>('#listen-source')
+const listenMessage = requireElement<HTMLParagraphElement>('#listen-message')
+const compositionValues =
+  requireElement<HTMLDivElement>('#composition-values')
+const resultSource = requireElement<HTMLParagraphElement>('#result-source')
+const resultMood = requireElement<HTMLSpanElement>('#result-mood')
+const tagList = requireElement<HTMLUListElement>('#tag-list')
+const changeMoodButton = requireElement<HTMLButtonElement>('#change-mood')
+const listenAgainButton = requireElement<HTMLButtonElement>('#listen-again')
+const moodButtons = Array.from(
+  appRoot.querySelectorAll<HTMLButtonElement>('[data-mood]'),
+)
+const screens = Array.from(
+  appRoot.querySelectorAll<HTMLElement>('[data-screen]'),
+)
+
+const controller = new AppController()
+const audioEngine = new AudioEngine()
+let engine = await ArtEngine.create(artCanvas, {
+  seed: HOME_SEED,
   input: DEFAULT_VISUAL_INPUT,
   mood: 'neutral',
 })
-const audioEngine = new AudioEngine()
 let sampleAnimationId: number | undefined
 let sampleStartedAt = 0
 let sampleFrames: AudioFrame[] = []
-
-function renderVisualInput(input: SoundVisualInput): void {
-  for (const control of controls) {
-    const slider = visualControls.elements.namedItem(control.key)
-    const output = visualControls.querySelector<HTMLOutputElement>(
-      `[data-output="${control.key}"]`,
-    )
-    const value = input[control.key]
-
-    if (slider instanceof HTMLInputElement) {
-      slider.value = value.toFixed(2)
-    }
-
-    if (output) {
-      output.value = value.toFixed(2)
-    }
-  }
-
-  engine.setInput(input)
-}
-
-function setSlidersDisabled(disabled: boolean): void {
-  visualControls
-    .querySelectorAll<HTMLInputElement>('input[type="range"]')
-    .forEach((slider) => {
-      slider.disabled = disabled
-    })
-}
+let sampleSceneId: SampleSceneId = 'parkMorning'
+let sampleCompleting = false
 
 function renderProgress(elapsedMs: number, durationMs: number): void {
   const safeDuration = Math.max(1, durationMs)
   const safeElapsed = Math.min(safeDuration, Math.max(0, elapsedMs))
   listenProgress.value = (safeElapsed / safeDuration) * 100
-  listenCountdown.textContent = `${Math.max(0, (safeDuration - safeElapsed) / 1000).toFixed(1)} 秒`
+  listenCountdown.textContent = `${Math.max(
+    0,
+    (safeDuration - safeElapsed) / 1000,
+  ).toFixed(1)} 秒`
 }
 
-function setSessionRunning(running: boolean): void {
-  listenStartButton.disabled = running
-  listenStopButton.disabled = !running
-  setSlidersDisabled(running)
+function renderVisualInput(input: SoundVisualInput): void {
+  engine.setInput(input)
+
+  if (controller.state === 'listening') {
+    canvasCaption.textContent = `相对响度 ${Math.round(
+      input.loudness * 100,
+    )}% · 变化程度 ${Math.round(input.changeRate * 100)}%。只保留数值特征。`
+  }
 }
 
-function showSummary(summary: SoundSummary, sample: boolean): void {
-  const percentage = (value: number): string => `${Math.round(value * 100)}%`
-  const sourceLabel = sample ? '示例声景' : '麦克风分析'
-  const quietLabel = summary.quiet ? ' · 安静' : ''
+function compositionRow(
+  label: string,
+  value: number,
+  className: string,
+): string {
+  const percentage = Math.round(value * 100)
 
-  resultSummary.hidden = false
-  resultSummary.innerHTML = `
-    <strong>${sourceLabel}${quietLabel}</strong>
-    <div class="summary-values">
-      <span>基底 ${percentage(summary.composition.base)}</span>
-      <span>流动 ${percentage(summary.composition.flow)}</span>
-      <span>闪烁 ${percentage(summary.composition.sparkle)}</span>
+  return `
+    <div class="composition-row">
+      <div class="composition-label">
+        <span>${label}</span>
+        <strong>${percentage}%</strong>
+      </div>
+      <div class="composition-track" aria-hidden="true">
+        <span class="${className}" style="width: ${percentage}%"></span>
+      </div>
     </div>
   `
 }
 
-function finishSession(summary: SoundSummary, sample: boolean): void {
-  setSessionRunning(false)
-  renderProgress(summary.durationMs, SAMPLE_DURATION_MS)
-  renderVisualInput({
-    loudness: summary.loudnessMean,
-    lowEnergy: summary.lowEnergy,
-    midEnergy: summary.midEnergy,
-    highEnergy: summary.highEnergy,
-    changeRate: summary.changeRate,
-  })
-  showSummary(summary, sample)
-  listenMessage.textContent = sample
-    ? '示例分析完成。可以调整参数，或重新尝试麦克风。'
-    : '本地分析完成，麦克风资源已释放。'
+function renderResult(): void {
+  const summary = controller.summary
+  const mood = controller.mood
+
+  if (!summary || !mood) {
+    return
+  }
+
+  const tags = createArtworkTags(summary, mood)
+  const source =
+    controller.source === 'sample'
+      ? `示例声景 · ${SAMPLE_SCENES[sampleSceneId].labelZh}`
+      : '你的声音画'
+
+  resultSource.textContent = source
+  resultMood.textContent = MOOD_PROFILES[mood].labelZh
+  compositionValues.innerHTML = [
+    compositionRow('基底声', summary.composition.base, 'base-fill'),
+    compositionRow('流动声', summary.composition.flow, 'flow-fill'),
+    compositionRow('闪烁声', summary.composition.sparkle, 'sparkle-fill'),
+  ].join('')
+  tagList.innerHTML = `
+    <li><span>结构</span><strong>${tags.structure}</strong></li>
+    <li><span>运动</span><strong>${tags.movement}</strong></li>
+    <li><span>Mood</span><strong>${tags.mood}</strong></li>
+  `
+  canvasCaption.textContent = summary.quiet
+    ? `这是一段安静声景，三层构成保持为 0；Mood 为${MOOD_PROFILES[mood].labelZh}。`
+    : `基底声 ${Math.round(
+        summary.composition.base * 100,
+      )}%，流动声 ${Math.round(
+        summary.composition.flow * 100,
+      )}%，闪烁声 ${Math.round(
+        summary.composition.sparkle * 100,
+      )}%；Mood 为${MOOD_PROFILES[mood].labelZh}。`
 }
 
-function finishSampleSession(): void {
+function renderState(): void {
+  const state = controller.state
+  appRoot.dataset.appState = state
+  visualCard.dataset.state = state
+
+  for (const screen of screens) {
+    screen.hidden = screen.dataset.screen !== state
+  }
+
+  if (state === 'home') {
+    stageKicker.textContent = '声音的另一种样子'
+    artworkTitle.textContent = '听见，也看见'
+    sourceBadge.textContent = '本地生成'
+    canvasCaption.textContent =
+      '画面由示意数值生成。开始聆听前不会请求麦克风权限。'
+    return
+  }
+
+  if (state === 'listening') {
+    stopListeningButton.disabled = false
+    stageKicker.textContent = '实时回应'
+    artworkTitle.textContent = '声音正在形成'
+    sourceBadge.textContent =
+      controller.source === 'sample' ? '示例声景' : '本地聆听'
+    listenSource.textContent =
+      controller.source === 'sample'
+        ? SAMPLE_SCENES[sampleSceneId].labelZh
+        : '麦克风'
+    return
+  }
+
+  if (state === 'mood') {
+    stageKicker.textContent = '构图已经固定'
+    artworkTitle.textContent = '给它一种心情色彩'
+    sourceBadge.textContent =
+      controller.source === 'sample' ? '示例声景' : '本地生成'
+    canvasCaption.textContent =
+      '声音构成与布局已经固定；选择 Mood 只会改变色彩、明暗和运动倾向。'
+    moodButtons.forEach((button) => button.setAttribute('aria-pressed', 'false'))
+    return
+  }
+
+  stageKicker.textContent = '完成'
+  artworkTitle.textContent = '此刻的声音画'
+  sourceBadge.textContent =
+    controller.source === 'sample' ? '示例声景' : '本地生成'
+  renderResult()
+}
+
+async function resetArtwork(summary: SoundSummary): Promise<void> {
+  engine.destroy()
+  artCanvas.replaceChildren()
+  engine = await ArtEngine.create(artCanvas, {
+    seed: summary.seed,
+    input: summaryToVisualInput(summary),
+    mood: 'neutral',
+  })
+}
+
+async function finishSession(summary: SoundSummary): Promise<void> {
+  await resetArtwork(summary)
+  controller.completeListening(summary)
+  renderProgress(summary.durationMs, SAMPLE_DURATION_MS)
+  renderState()
+}
+
+async function finishSampleSession(): Promise<void> {
+  if (sampleCompleting) {
+    return
+  }
+
+  sampleCompleting = true
+
   if (sampleAnimationId !== undefined) {
     cancelAnimationFrame(sampleAnimationId)
     sampleAnimationId = undefined
@@ -286,27 +379,35 @@ function finishSampleSession(): void {
     SAMPLE_DURATION_MS,
     Math.max(0, performance.now() - sampleStartedAt),
   )
-  const summary = createSampleSummary(sampleFrames, elapsedMs)
-  finishSession(summary, true)
+  const summary = createSampleSummary(
+    sampleFrames,
+    elapsedMs,
+    sampleSceneId,
+  )
+  await finishSession(summary)
+  sampleCompleting = false
 }
 
-function startSampleSession(reason: string): void {
+function startSampleSession(sceneId: SampleSceneId, message: string): void {
+  controller.startListening('sample')
+  sampleSceneId = sceneId
   sampleFrames = []
   sampleStartedAt = performance.now()
-  resultSummary.hidden = true
-  listenMessage.textContent = `${reason} 当前使用本地合成特征演示，不播放或下载音频。`
-  setSessionRunning(true)
+  sampleCompleting = false
+  renderProgress(0, SAMPLE_DURATION_MS)
+  listenMessage.textContent = message
+  renderState()
 
   const sampleFrame = (now: number): void => {
     const elapsedMs = Math.min(SAMPLE_DURATION_MS, now - sampleStartedAt)
-    const frame = createSampleFrame(elapsedMs)
+    const frame = createSampleFrame(elapsedMs, sampleSceneId)
     sampleFrames.push(frame)
     renderVisualInput(frame)
     renderProgress(elapsedMs, SAMPLE_DURATION_MS)
 
     if (elapsedMs >= SAMPLE_DURATION_MS) {
       sampleAnimationId = undefined
-      finishSession(createSampleSummary(sampleFrames), true)
+      void finishSampleSession()
       return
     }
 
@@ -318,13 +419,13 @@ function startSampleSession(reason: string): void {
 
 async function startMicrophoneSession(): Promise<void> {
   if (sampleAnimationId !== undefined) {
-    finishSampleSession()
+    await finishSampleSession()
   }
 
-  resultSummary.hidden = true
-  listenMessage.textContent = '正在请求麦克风权限…'
+  controller.startListening('microphone')
   renderProgress(0, SAMPLE_DURATION_MS)
-  setSessionRunning(true)
+  listenMessage.textContent = '正在请求麦克风权限…'
+  renderState()
 
   try {
     const summary = await audioEngine.listen({
@@ -332,57 +433,80 @@ async function startMicrophoneSession(): Promise<void> {
       onFrame: renderVisualInput,
       onProgress: renderProgress,
     })
-    finishSession(summary, false)
-  } catch (error) {
-    const reason =
-      error instanceof AudioEngineError
-        ? error.message
-        : '当前浏览器无法使用麦克风，可以先体验示例。'
-    startSampleSession(reason)
+    await finishSession(summary)
+  } catch {
+    const sceneId = pickSampleScene()
+    startSampleSession(sceneId, MICROPHONE_FALLBACK_MESSAGE)
   }
 }
 
-visualControls.addEventListener('input', (event) => {
-  const target = event.target
-
-  if (!(target instanceof HTMLInputElement)) {
-    return
-  }
-
-  if (target.type === 'range') {
-    const output = visualControls.querySelector<HTMLOutputElement>(
-      `[data-output="${target.name}"]`,
-    )
-
-    if (output) {
-      output.value = target.valueAsNumber.toFixed(2)
-    }
-
-    engine.setInput(readVisualInput())
-    return
-  }
-
-  if (target.name === 'mood') {
-    engine.setMood(readMood())
-  }
-})
-
-listenStartButton.addEventListener('click', () => {
+startListeningButton.addEventListener('click', () => {
   void startMicrophoneSession()
 })
 
-listenStopButton.addEventListener('click', () => {
+startSampleButton.addEventListener('click', () => {
+  const sceneId = pickSampleScene()
+  startSampleSession(
+    sceneId,
+    `正在体验「${SAMPLE_SCENES[sceneId].labelZh}」示例声景；不播放或下载音频。`,
+  )
+})
+
+stopListeningButton.addEventListener('click', () => {
+  stopListeningButton.disabled = true
+  listenMessage.textContent = '正在安全结束并释放资源…'
+
   if (sampleAnimationId !== undefined) {
-    finishSampleSession()
+    void finishSampleSession()
     return
   }
 
   void audioEngine.stop()
 })
 
+moodButtons.forEach((button) => {
+  button.addEventListener('click', () => {
+    const mood = button.dataset.mood as Mood
+
+    if (!controller.selectMood(mood)) {
+      return
+    }
+
+    engine.setMood(mood)
+    moodButtons.forEach((option) =>
+      option.setAttribute(
+        'aria-pressed',
+        option.dataset.mood === mood ? 'true' : 'false',
+      ),
+    )
+    renderState()
+  })
+})
+
+changeMoodButton.addEventListener('click', () => {
+  if (controller.changeMood()) {
+    renderState()
+  }
+})
+
+listenAgainButton.addEventListener('click', () => {
+  void startMicrophoneSession()
+})
+
+brandHomeButton.addEventListener('click', () => {
+  if (controller.state === 'listening') {
+    return
+  }
+
+  controller.returnHome()
+  engine.setInput(DEFAULT_VISUAL_INPUT)
+  engine.setMood('neutral')
+  renderState()
+})
+
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && sampleAnimationId !== undefined) {
-    finishSampleSession()
+    void finishSampleSession()
   }
 })
 
@@ -397,3 +521,5 @@ window.addEventListener(
   },
   { once: true },
 )
+
+renderState()
