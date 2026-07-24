@@ -14,6 +14,27 @@ export interface SoundVisualInput {
   changeRate: number
 }
 
+export interface AudioFrame extends SoundVisualInput {
+  timestampMs: number
+}
+
+export interface SoundSummary {
+  durationMs: number
+  loudnessMean: number
+  loudnessPeak: number
+  lowEnergy: number
+  midEnergy: number
+  highEnergy: number
+  changeRate: number
+  quiet: boolean
+  composition: {
+    base: number
+    flow: number
+    sparkle: number
+  }
+  seed: string
+}
+
 export interface MoodProfile {
   id: Mood
   labelZh: string

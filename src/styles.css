@@ -164,6 +164,7 @@ h2 {
 .control-panel {
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
   padding: clamp(1.25rem, 2.2vw, 1.8rem);
   background: rgb(249 247 242 / 88%);
 }
@@ -175,10 +176,108 @@ h2 {
   line-height: 1.55;
 }
 
+.listen-card {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding: 1rem;
+  border: 1px solid rgb(48 43 51 / 12%);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 42%);
+}
+
+.listen-status-row,
+.session-actions,
+.summary-values {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.listen-status-row {
+  font-size: 0.78rem;
+}
+
+.listen-status-row span {
+  color: #706a73;
+  font-variant-numeric: tabular-nums;
+}
+
+.listen-card progress {
+  width: 100%;
+  height: 0.45rem;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  accent-color: #625568;
+}
+
+.listen-card progress::-webkit-progress-bar {
+  background: #ddd8d5;
+}
+
+.listen-card progress::-webkit-progress-value {
+  border-radius: 999px;
+  background: #625568;
+}
+
+.primary-button,
+.secondary-button {
+  min-height: 2.65rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: 0.8rem;
+  cursor: pointer;
+}
+
+.primary-button {
+  flex: 1;
+  border: 1px solid #4f4654;
+  color: #fff;
+  background: #4f4654;
+}
+
+.secondary-button {
+  border: 1px solid rgb(48 43 51 / 18%);
+  color: #49434b;
+  background: transparent;
+}
+
+.primary-button:disabled,
+.secondary-button:disabled,
+.slider-control input:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.primary-button:focus-visible,
+.secondary-button:focus-visible {
+  outline: 3px solid rgb(81 68 89 / 28%);
+  outline-offset: 2px;
+}
+
+.listen-message {
+  margin-bottom: 0;
+  color: #706a73;
+  font-size: 0.7rem;
+  line-height: 1.5;
+}
+
+.summary-card {
+  padding-top: 0.65rem;
+  border-top: 1px solid rgb(48 43 51 / 10%);
+  font-size: 0.72rem;
+}
+
+.summary-values {
+  margin-top: 0.45rem;
+  color: #706a73;
+}
+
 .sliders {
   display: grid;
-  gap: 1.25rem;
-  margin: 2rem 0;
+  gap: 0.85rem;
+  margin: 1.35rem 0;
 }
 
 .slider-control {
