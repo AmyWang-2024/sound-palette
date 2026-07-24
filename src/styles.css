@@ -1,0 +1,123 @@
+:root {
+  color: #201f24;
+  background: #f4f1eb;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.app-shell {
+  display: grid;
+  width: min(100%, 56rem);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: clamp(1.5rem, 5vw, 4rem);
+  align-content: center;
+  gap: 2rem;
+}
+
+.intro {
+  max-width: 38rem;
+}
+
+.eyebrow,
+.milestone,
+.privacy-note,
+.canvas-summary {
+  color: #68636d;
+}
+
+.eyebrow {
+  margin: 0 0 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+h1 {
+  margin: 0;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(3rem, 12vw, 7.5rem);
+  font-weight: 400;
+  letter-spacing: -0.055em;
+  line-height: 0.9;
+}
+
+.tagline {
+  margin: 1.25rem 0 0;
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+}
+
+.milestone {
+  margin: 0.8rem 0 0;
+  font-size: 0.85rem;
+}
+
+.art-frame {
+  position: relative;
+  overflow: hidden;
+  min-height: 18rem;
+  border: 1px solid rgb(32 31 36 / 14%);
+  border-radius: 1.5rem;
+  background:
+    radial-gradient(circle at 24% 30%, rgb(221 205 183 / 55%), transparent 34%),
+    radial-gradient(circle at 78% 70%, rgb(185 201 197 / 48%), transparent 38%),
+    rgb(255 255 255 / 38%);
+}
+
+.art-canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.art-canvas canvas {
+  display: block;
+}
+
+.canvas-summary {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 1;
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+.privacy-note {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
+@media (max-width: 36rem) {
+  .app-shell {
+    align-content: start;
+  }
+
+  .art-frame {
+    min-height: 46vh;
+  }
+}
