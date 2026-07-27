@@ -16,6 +16,9 @@ export const AI_ERROR_CODES = [
   'JOB_NOT_FOUND',
   'UPLOAD_AUTH_EXPIRED',
   'JOB_STATE_CONFLICT',
+  'JOB_CANCELED',
+  'CAPTION_INVALID_RESPONSE',
+  'AUDIO_DELETE_UNCONFIRMED',
 ] as const
 
 export type AiErrorCode = (typeof AI_ERROR_CODES)[number]
@@ -38,6 +41,9 @@ export const AI_SAFE_MESSAGES: Record<AiErrorCode, string> = {
   JOB_NOT_FOUND: '没有找到这次生成任务，请重新开始。',
   UPLOAD_AUTH_EXPIRED: '上传确认已过期，请重新开始。',
   JOB_STATE_CONFLICT: '任务状态已经变化，请刷新后重试。',
+  JOB_CANCELED: '已取消这次 AI 生成。',
+  CAPTION_INVALID_RESPONSE: '暂时没能安全理解这段声音，可以使用本地声纹画。',
+  AUDIO_DELETE_UNCONFIRMED: '无法确认临时声音已删除，本次结果已丢弃。',
 }
 
 export class AiGenerationError extends Error {
