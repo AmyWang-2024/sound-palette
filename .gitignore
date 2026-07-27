@@ -21,3 +21,8 @@ dist-ssr
 
 # Local scaffold staging
 _m0-vite-scaffold/
+
+# WeChat DevTools local settings and generated npm output
+project.private.config.json
+miniprogram/project.private.config.json
+miniprogram/miniprogram_npm/

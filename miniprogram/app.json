@@ -1,0 +1,13 @@
+{
+  "pages": ["pages/home/index"],
+  "window": {
+    "navigationBarTitleText": "我的声音相册",
+    "navigationBarBackgroundColor": "#eee9e1",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#eee9e1",
+    "backgroundTextStyle": "light"
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

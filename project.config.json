@@ -1,0 +1,17 @@
+{
+  "appid": "touristappid",
+  "compileType": "miniprogram",
+  "miniprogramRoot": "miniprogram/",
+  "projectname": "sound-palette-miniprogram",
+  "description": "我的声音相册微信原生小程序",
+  "setting": {
+    "urlCheck": true,
+    "es6": true,
+    "postcss": true,
+    "minified": true,
+    "enhance": true,
+    "compileHotReLoad": false,
+    "useCompilerPlugins": ["typescript"]
+  },
+  "condition": {}
+}

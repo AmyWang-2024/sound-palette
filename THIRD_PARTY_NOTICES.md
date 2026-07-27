@@ -13,6 +13,7 @@ Sound Palette 自有代码的许可证由项目所有者决定；本文件不为
 | `typescript` | 6.0.3 | [microsoft/TypeScript](https://github.com/microsoft/TypeScript) | Apache-2.0 | 类型检查与编译 |
 | `vitest` | 4.1.10 | [vitest-dev/vitest](https://github.com/vitest-dev/vitest) | MIT | 单元测试 |
 | `@types/seedrandom` | 3.0.8 | [DefinitelyTyped/DefinitelyTyped](https://github.com/DefinitelyTyped/DefinitelyTyped) | MIT | `seedrandom` TypeScript 类型 |
+| `miniprogram-api-typings` | 5.2.1 | [wechat-miniprogram/api-typings](https://github.com/wechat-miniprogram/api-typings) | MIT | 微信小程序 API TypeScript 类型检查 |
 
 发布或再分发时，应同时遵守这些软件包及其传递依赖中附带的许可证和版权声明。完整许可
 文本可在安装后的各包目录及其官方仓库中查阅。

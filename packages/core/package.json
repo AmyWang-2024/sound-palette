@@ -1,0 +1,19 @@
+{
+  "name": "@sound-palette/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./mood-profiles": "./src/mood-profiles.ts",
+    "./sample-scenes": "./src/sample-scenes.ts",
+    "./sound-summary": "./src/sound-summary.ts",
+    "./tag-rules": "./src/tag-rules.ts",
+    "./types": "./src/types.ts",
+    "./visual-rules": "./src/visual-rules.ts"
+  },
+  "dependencies": {
+    "culori": "4.0.2",
+    "seedrandom": "3.0.5"
+  }
+}

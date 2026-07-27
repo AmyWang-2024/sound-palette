@@ -1,0 +1,19 @@
+<view class="page-shell">
+  <view class="art-placeholder" aria-hidden="true">
+    <view class="orb orb-a"></view>
+    <view class="orb orb-b"></view>
+    <view class="flow-line"></view>
+  </view>
+
+  <view class="content">
+    <text class="eyebrow">SOUND PALETTE · {{version}}</text>
+    <text class="title">我的声音相册</text>
+    <text class="copy">微信原生小程序工程骨架已就绪。</text>
+    <view class="gate-card">
+      <text class="gate-title">W0 账号与工程已就绪</text>
+      <text class="gate-copy">
+        中国大陆个人主体 · 工具 &gt; 图片处理 · Sound Palette
+      </text>
+    </view>
+  </view>
+</view>

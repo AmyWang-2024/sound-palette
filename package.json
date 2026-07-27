@@ -7,10 +7,12 @@
     "dev": "vite",
     "test": "vitest run",
     "build": "tsc && vite build",
+    "typecheck:miniprogram": "tsc -p miniprogram/tsconfig.json",
     "preview": "vite preview"
   },
   "devDependencies": {
     "@types/seedrandom": "^3.0.8",
+    "miniprogram-api-typings": "^5.2.1",
     "typescript": "~6.0.2",
     "vite": "^8.1.1",
     "vitest": "^4.1.10"
