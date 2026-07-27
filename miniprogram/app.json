@@ -9,5 +9,10 @@
   },
   "style": "v2",
   "sitemapLocation": "sitemap.json",
-  "lazyCodeLoading": "requiredComponents"
+  "lazyCodeLoading": "requiredComponents",
+  "permission": {
+    "scope.record": {
+      "desc": "用于在用户主动点击后分析十秒环境声音并生成抽象画面；不识别语音、不上传音频，临时文件立即删除"
+    }
+  }
 }

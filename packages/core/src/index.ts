@@ -1,4 +1,5 @@
 export * from './mood-profiles'
+export * from './pcm-analyzer'
 export * from './sample-scenes'
 export * from './sound-summary'
 export * from './tag-rules'

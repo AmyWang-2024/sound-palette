@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "culori": "^4.0.2",
+    "fft.js": "4.0.4",
     "pixi.js": "^8.19.0",
     "seedrandom": "^3.0.5",
     "simplex-noise": "^4.0.3"

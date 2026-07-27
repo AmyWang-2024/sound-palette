@@ -63,10 +63,54 @@
   transition: width 100ms linear;
 }
 
+.sound-response {
+  width: 360rpx;
+  margin-top: 24rpx;
+}
+
+.sound-response-header {
+  display: flex;
+  justify-content: space-between;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 20rpx;
+}
+
+.sound-response-track {
+  height: 12rpx;
+  margin-top: 10rpx;
+  overflow: hidden;
+  border: 1rpx solid rgba(255, 255, 255, 0.42);
+  border-radius: 999rpx;
+  background: rgba(26, 23, 29, 0.2);
+}
+
+.sound-response-fill {
+  min-width: 4rpx;
+  height: 100%;
+  border-radius: inherit;
+  background: rgba(255, 255, 255, 0.94);
+  transition: width 120ms ease-out;
+}
+
 .listening-note {
   margin-top: 24rpx;
   font-size: 22rpx;
   opacity: 0.86;
+}
+
+.stop-button {
+  min-width: 200rpx;
+  margin-top: 28rpx;
+  padding: 10rpx 28rpx;
+  color: #fff;
+  border: 1rpx solid rgba(255, 255, 255, 0.48);
+  border-radius: 999rpx;
+  font-size: 23rpx;
+  background: rgba(30, 27, 34, 0.24);
+}
+
+.stop-button::after {
+  border: 0;
 }
 
 .content {
@@ -129,6 +173,32 @@
 .secondary-button::after,
 .mood-option::after {
   border: 0;
+}
+
+.primary-button[disabled],
+.secondary-button[disabled] {
+  opacity: 0.58;
+}
+
+.sample-button,
+.compact-button {
+  margin-top: 18rpx;
+}
+
+.compact-button {
+  min-height: 84rpx;
+  font-size: 26rpx;
+}
+
+.status-card {
+  margin-top: 28rpx;
+  padding: 22rpx 24rpx;
+  color: #625b65;
+  border-left: 5rpx solid #8d7f8c;
+  border-radius: 0 18rpx 18rpx 0;
+  font-size: 24rpx;
+  line-height: 1.65;
+  background: rgba(255, 255, 255, 0.42);
 }
 
 .privacy-note {
@@ -224,6 +294,86 @@
   height: 100%;
   border-radius: inherit;
   background: #777079;
+}
+
+.diagnostic-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+  margin-top: 28rpx;
+  padding: 24rpx 26rpx;
+  border: 1rpx solid rgba(46, 42, 49, 0.1);
+  border-radius: 24rpx;
+  background: rgba(255, 255, 255, 0.32);
+}
+
+.diagnostic-title {
+  margin-bottom: 4rpx;
+  color: #514b54;
+  font-size: 23rpx;
+  font-weight: 600;
+}
+
+.diagnostic-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 20rpx;
+  color: #777079;
+  font-size: 21rpx;
+}
+
+.privacy-backdrop {
+  position: fixed;
+  z-index: 20;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+  background: rgba(26, 23, 29, 0.58);
+}
+
+.privacy-dialog {
+  display: flex;
+  width: 100%;
+  max-width: 650rpx;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 40rpx 34rpx 32rpx;
+  border-radius: 36rpx;
+  background: #f4efe8;
+  box-shadow: 0 28rpx 100rpx rgba(20, 18, 22, 0.28);
+}
+
+.privacy-title {
+  font-family: Georgia, "Songti SC", serif;
+  font-size: 40rpx;
+  line-height: 1.25;
+}
+
+.privacy-copy {
+  margin-top: 24rpx;
+  color: #655f68;
+  font-size: 25rpx;
+  line-height: 1.75;
+}
+
+.privacy-contract {
+  margin-top: 18rpx;
+  color: #776f79;
+  font-size: 22rpx;
+  text-align: center;
+}
+
+.privacy-action {
+  margin-top: 24rpx;
+}
+
+.privacy-action + .privacy-action {
+  margin-top: 14rpx;
 }
 
 @media (max-width: 340px) {

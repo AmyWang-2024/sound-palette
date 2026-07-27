@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./mood-profiles": "./src/mood-profiles.ts",
+    "./pcm-analyzer": "./src/pcm-analyzer.ts",
     "./sample-scenes": "./src/sample-scenes.ts",
     "./sound-summary": "./src/sound-summary.ts",
     "./tag-rules": "./src/tag-rules.ts",
@@ -14,6 +15,7 @@
   },
   "dependencies": {
     "culori": "4.0.2",
+    "fft.js": "4.0.4",
     "seedrandom": "3.0.5"
   }
 }

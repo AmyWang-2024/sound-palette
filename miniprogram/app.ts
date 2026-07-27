@@ -1,5 +1,5 @@
 App<IAppOption>({
   globalData: {
-    version: '0.1.0-w0',
+    version: '0.1.0-w2',
   },
 })

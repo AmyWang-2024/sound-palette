@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createSeededLayout,
   createVisualState,
+  deriveReactiveVisualMetrics,
   MAX_PARTICLES,
   normalizeVisualInput,
   updateVisualInput,
@@ -67,5 +68,43 @@ describe('visual rules', () => {
     expect(changedInput.layout).toBe(state.layout)
     expect(changedInput.mood).toBe(state.mood)
     expect(changedInput.input).not.toBe(state.input)
+  })
+
+  it('maps dominant bands and transients to visibly separated visual controls', () => {
+    const low = deriveReactiveVisualMetrics({
+      loudness: 0.5,
+      lowEnergy: 0.9,
+      midEnergy: 0.05,
+      highEnergy: 0.05,
+      changeRate: 0.1,
+    })
+    const mid = deriveReactiveVisualMetrics({
+      loudness: 0.5,
+      lowEnergy: 0.05,
+      midEnergy: 0.9,
+      highEnergy: 0.05,
+      changeRate: 0.1,
+    })
+    const high = deriveReactiveVisualMetrics({
+      loudness: 0.5,
+      lowEnergy: 0.05,
+      midEnergy: 0.05,
+      highEnergy: 0.9,
+      changeRate: 0.1,
+    })
+    const transient = deriveReactiveVisualMetrics({
+      loudness: 0.8,
+      lowEnergy: 0.3,
+      midEnergy: 0.3,
+      highEnergy: 0.4,
+      changeRate: 0.95,
+    })
+
+    expect(low.shapeScale).toBeGreaterThan(mid.shapeScale + 0.5)
+    expect(mid.flowAmplitude).toBeGreaterThan(low.flowAmplitude + 1)
+    expect(high.particleDensity).toBeGreaterThan(mid.particleDensity + 1)
+    expect(transient.motionMultiplier).toBeGreaterThan(
+      high.motionMultiplier + 1,
+    )
   })
 })

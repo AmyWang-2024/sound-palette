@@ -4,33 +4,86 @@
       id="paletteCanvas"
       class="visual-canvas"
       type="2d"
-      aria-label="根据声音示例生成的抽象画面"
+      aria-label="根据声音生成的抽象画面"
     ></canvas>
     <view wx:if="{{isListening}}" class="listening-overlay">
-      <text class="listening-kicker">正在感受 {{sceneLabel}}</text>
+      <text class="listening-kicker">{{listeningKicker}}</text>
       <text class="countdown">{{remainingSeconds}}</text>
       <view class="progress-track">
         <view class="progress-fill" style="width: {{progressPercent}}%;"></view>
       </view>
-      <text class="listening-note">这是内置示例，不会使用麦克风</text>
+      <view wx:if="{{listeningMode === 'microphone'}}" class="sound-response">
+        <view class="sound-response-header">
+          <text>声音响应</text>
+          <text>{{liveLevelPercent}}%</text>
+        </view>
+        <view class="sound-response-track">
+          <view
+            class="sound-response-fill"
+            style="width: {{liveLevelPercent}}%;"
+          ></view>
+        </view>
+      </view>
+      <text class="listening-note">{{listeningNote}}</text>
+      <button class="stop-button" bindtap="stopListening">停止聆听</button>
     </view>
   </view>
 
   <view class="content">
     <block wx:if="{{isHome}}">
-      <text class="eyebrow">SOUND PALETTE · 示例模式</text>
+      <text class="eyebrow">SOUND PALETTE · 本机分析</text>
       <text class="title">我的声音相册</text>
       <text class="copy">
-        先用一段“{{sceneLabel}}”示例，看看十秒声音如何长成一幅抽象画。
+        给周围的声音十秒钟，让厚度、流动与明亮细节长成一幅只属于此刻的画。
       </text>
-      <button class="primary-button" bindtap="startSample">播放十秒示例</button>
-      <text class="privacy-note">本步骤不请求麦克风，不录音，也不上传数据。</text>
+      <view wx:if="{{statusMessage}}" class="status-card">
+        <text>{{statusMessage}}</text>
+      </view>
+      <button
+        class="primary-button"
+        loading="{{isPreparing}}"
+        disabled="{{isPreparing}}"
+        bindtap="startMicrophone"
+      >
+        开始十秒聆听
+      </button>
+      <button
+        wx:if="{{showPermissionHelp}}"
+        class="secondary-button compact-button"
+        open-type="openSetting"
+        bindopensetting="handleOpenSetting"
+      >
+        去设置开启麦克风
+      </button>
+      <button
+        class="secondary-button sample-button"
+        disabled="{{isPreparing}}"
+        bindtap="startSample"
+      >
+        先体验内置示例
+      </button>
+      <text class="privacy-note">
+        声音只在本机分析，不识别语音、不上传；微信生成的临时录音文件在结束后立即删除。
+      </text>
+      <view wx:if="{{hasRecordingDiagnostics}}" class="diagnostic-card">
+        <text class="diagnostic-title">上次清理记录</text>
+        <view
+          wx:for="{{recordingDiagnostics}}"
+          wx:key="label"
+          class="diagnostic-row"
+        >
+          <text>{{item.label}}</text>
+          <text>{{item.value}}</text>
+        </view>
+      </view>
     </block>
 
     <block wx:elif="{{isListening}}">
-      <text class="eyebrow">正在聆听示例</text>
-      <text class="state-title">让画面慢慢浮现</text>
-      <text class="copy">声音的厚度、流动与明亮细节正在改变同一幅构图。</text>
+      <text class="eyebrow">
+        {{listeningMode === 'microphone' ? '正在聆听此刻' : '正在聆听示例'}}
+      </text>
+      <text class="state-title">{{listeningTitle}}</text>
+      <text class="copy">画面会随声音变化，但原始音频不会保存或上传。</text>
     </block>
 
     <block wx:elif="{{isMood}}">
@@ -67,7 +120,43 @@
           <text>{{item.value}}%</text>
         </view>
       </view>
-      <button class="secondary-button" bindtap="restart">再听一个示例</button>
+      <view wx:if="{{hasRecordingDiagnostics}}" class="diagnostic-card">
+        <text class="diagnostic-title">本次本机分析</text>
+        <view
+          wx:for="{{recordingDiagnostics}}"
+          wx:key="label"
+          class="diagnostic-row"
+        >
+          <text>{{item.label}}</text>
+          <text>{{item.value}}</text>
+        </view>
+      </view>
+      <button class="secondary-button" bindtap="restart">再听一个瞬间</button>
     </block>
+  </view>
+
+  <view wx:if="{{showPrivacy}}" class="privacy-backdrop">
+    <view class="privacy-dialog" role="dialog" aria-label="隐私授权说明">
+      <text class="privacy-title">开始前，请确认隐私说明</text>
+      <text class="privacy-copy">
+        点击同意后，本次仅使用麦克风分析十秒实时 PCM 数值，不识别语音，不上传声音。
+        微信生成的临时录音文件会在停止后立即删除。
+      </text>
+      <text class="privacy-contract">{{privacyContractName}}</text>
+      <button
+        id="agreePrivacyButton"
+        class="primary-button privacy-action"
+        open-type="agreePrivacyAuthorization"
+        bindagreeprivacyauthorization="handleAgreePrivacyAuthorization"
+      >
+        同意并继续
+      </button>
+      <button
+        class="secondary-button privacy-action"
+        bindtap="declinePrivacyAuthorization"
+      >
+        暂不使用麦克风
+      </button>
+    </view>
   </view>
 </view>

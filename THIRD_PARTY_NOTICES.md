@@ -7,6 +7,7 @@ Sound Palette 自有代码的许可证由项目所有者决定；本文件不为
 |---|---:|---|---|---|
 | `pixi.js` | 8.19.0 | [pixijs/pixijs](https://github.com/pixijs/pixijs) | MIT | WebGL/Canvas 抽象视觉渲染与作品快照 |
 | `culori` | 4.0.2 | [Evercoder/culori](https://github.com/Evercoder/culori) | MIT | 感知色彩空间与 Mood 调色 |
+| `fft.js` | 4.0.4 | [indutny/fft.js](https://github.com/indutny/fft.js) | MIT | 小程序 2048 点实时 PCM 频谱分析 |
 | `simplex-noise` | 4.0.3 | [jwagner/simplex-noise.js](https://github.com/jwagner/simplex-noise.js) | MIT | 连续有机运动噪声 |
 | `seedrandom` | 3.0.5 | [davidbau/seedrandom](https://github.com/davidbau/seedrandom) | MIT | 可重复构图和稳定标签选择 |
 | `vite` | 8.1.5 | [vitejs/vite](https://github.com/vitejs/vite) | MIT | 本地开发与生产静态构建 |

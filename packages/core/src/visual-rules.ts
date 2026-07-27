@@ -17,12 +17,28 @@ export const DEFAULT_VISUAL_INPUT: SoundVisualInput = {
   changeRate: 0.32,
 }
 
+export interface ReactiveVisualMetrics {
+  loudness: number
+  lowDominance: number
+  midDominance: number
+  highDominance: number
+  change: number
+  shapeScale: number
+  flowAmplitude: number
+  particleDensity: number
+  motionMultiplier: number
+}
+
 function unit(value: number | undefined): number {
   if (!Number.isFinite(value)) {
     return 0
   }
 
   return Math.min(1, Math.max(0, value ?? 0))
+}
+
+function perceptual(value: number): number {
+  return Math.pow(unit(value), 0.48)
 }
 
 export function normalizeVisualInput(
@@ -34,6 +50,34 @@ export function normalizeVisualInput(
     midEnergy: unit(input.midEnergy),
     highEnergy: unit(input.highEnergy),
     changeRate: unit(input.changeRate),
+  }
+}
+
+export function deriveReactiveVisualMetrics(
+  input: Partial<SoundVisualInput>,
+): ReactiveVisualMetrics {
+  const normalized = normalizeVisualInput(input)
+  const loudness = perceptual(normalized.loudness)
+  const change = perceptual(normalized.changeRate)
+  const totalEnergy =
+    normalized.lowEnergy + normalized.midEnergy + normalized.highEnergy
+  const lowDominance =
+    totalEnergy > 0.01 ? normalized.lowEnergy / totalEnergy : 0
+  const midDominance =
+    totalEnergy > 0.01 ? normalized.midEnergy / totalEnergy : 0
+  const highDominance =
+    totalEnergy > 0.01 ? normalized.highEnergy / totalEnergy : 0
+
+  return {
+    loudness,
+    lowDominance,
+    midDominance,
+    highDominance,
+    change,
+    shapeScale: 0.56 + loudness * 0.86 + lowDominance * 0.78,
+    flowAmplitude: 0.28 + midDominance * 2.1 + change * 0.62,
+    particleDensity: 0.06 + highDominance * 1.7 + change * 0.72,
+    motionMultiplier: 0.5 + loudness * 0.42 + change * 1.85,
   }
 }
 
