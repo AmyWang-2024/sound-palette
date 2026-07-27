@@ -12,6 +12,10 @@ export const AI_ERROR_CODES = [
   'PROVIDER_UNAVAILABLE',
   'RESULT_EXPIRED',
   'IDEMPOTENCY_CONFLICT',
+  'INVALID_REQUEST',
+  'JOB_NOT_FOUND',
+  'UPLOAD_AUTH_EXPIRED',
+  'JOB_STATE_CONFLICT',
 ] as const
 
 export type AiErrorCode = (typeof AI_ERROR_CODES)[number]
@@ -30,6 +34,10 @@ export const AI_SAFE_MESSAGES: Record<AiErrorCode, string> = {
   PROVIDER_UNAVAILABLE: 'AI 服务暂不可用，可以使用本地声纹画。',
   RESULT_EXPIRED: '临时作品已过期，请重新录音。',
   IDEMPOTENCY_CONFLICT: '任务标识与原请求不一致，请重新开始。',
+  INVALID_REQUEST: '请求信息不完整，请重新开始。',
+  JOB_NOT_FOUND: '没有找到这次生成任务，请重新开始。',
+  UPLOAD_AUTH_EXPIRED: '上传确认已过期，请重新开始。',
+  JOB_STATE_CONFLICT: '任务状态已经变化，请刷新后重试。',
 }
 
 export class AiGenerationError extends Error {

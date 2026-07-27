@@ -4,7 +4,7 @@ import {
   type AiFeatureConfig,
 } from './config'
 import type {
-  AiGenerationRequest,
+  AiM0MockGenerationRequest,
   AiGenerationResult,
   CaptionProvider,
   ImageProvider,
@@ -15,7 +15,7 @@ interface CachedRequest {
   result: Promise<AiGenerationResult>
 }
 
-function requestFingerprint(request: AiGenerationRequest): string {
+function requestFingerprint(request: AiM0MockGenerationRequest): string {
   return JSON.stringify({
     consentVersion: request.consentVersion,
     mood: request.mood,
@@ -41,7 +41,7 @@ export class MockGenerationService {
     this.config = options.config ?? { ...DEFAULT_AI_FEATURE_CONFIG }
   }
 
-  generate(request: AiGenerationRequest): Promise<AiGenerationResult> {
+  generate(request: AiM0MockGenerationRequest): Promise<AiGenerationResult> {
     if (!this.config.enabled) {
       return Promise.reject(new AiGenerationError('AI_FEATURE_DISABLED'))
     }
@@ -65,7 +65,7 @@ export class MockGenerationService {
   }
 
   async #run(
-    request: AiGenerationRequest,
+    request: AiM0MockGenerationRequest,
   ): Promise<AiGenerationResult> {
     const caption = await this.captionProvider.caption({
       jobId: request.jobId,
