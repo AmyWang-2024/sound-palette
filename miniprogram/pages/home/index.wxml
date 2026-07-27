@@ -28,6 +28,12 @@
       <button class="stop-button" bindtap="stopListening">停止聆听</button>
     </view>
   </view>
+  <canvas
+    id="exportCanvas"
+    class="export-canvas"
+    type="2d"
+    aria-label="作品导出画布"
+  ></canvas>
 
   <view class="content">
     <block wx:if="{{isHome}}">
@@ -131,6 +137,24 @@
           <text>{{item.value}}</text>
         </view>
       </view>
+      <view wx:if="{{exportStatus}}" class="status-card export-status">
+        <text>{{exportStatus}}</text>
+      </view>
+      <button
+        class="primary-button"
+        loading="{{isExporting}}"
+        disabled="{{isExporting}}"
+        bindtap="saveArtwork"
+      >
+        保存图片
+      </button>
+      <button
+        class="secondary-button compact-button"
+        disabled="{{isExporting}}"
+        bindtap="shareArtwork"
+      >
+        分享图片
+      </button>
       <button class="secondary-button" bindtap="restart">再听一个瞬间</button>
     </block>
   </view>

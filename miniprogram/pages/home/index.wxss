@@ -20,6 +20,17 @@
   height: 100%;
 }
 
+.export-canvas {
+  position: fixed;
+  z-index: -1;
+  top: -10px;
+  left: -10px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .listening-overlay {
   position: absolute;
   top: 0;
@@ -199,6 +210,10 @@
   font-size: 24rpx;
   line-height: 1.65;
   background: rgba(255, 255, 255, 0.42);
+}
+
+.export-status {
+  text-align: center;
 }
 
 .privacy-note {

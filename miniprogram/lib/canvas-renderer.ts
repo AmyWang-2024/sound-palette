@@ -1,3 +1,5 @@
+/// <reference types="miniprogram-api-typings" />
+
 import {
   deriveReactiveVisualMetrics,
   type ReactiveVisualMetrics,

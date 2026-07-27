@@ -17,11 +17,18 @@ import {
 } from '../../vendor/shared-core'
 import { drawSoundPalette } from '../../lib/canvas-renderer'
 import {
+  MINI_EXPORT_HEIGHT,
+  MINI_EXPORT_WIDTH,
+  releaseMiniExportCanvas,
+  renderMiniArtworkCard,
+} from '../../lib/artwork-export'
+import {
   isRecorderSessionActive,
   startRecorderSession,
   stopRecorderSession,
   type RecorderDiagnostics,
 } from '../../lib/recorder-session'
+import { cleanupTempFile } from '../../lib/temp-file-cleanup'
 
 const SAMPLE_SCENE_ID = 'parkMorning'
 const UI_INTERVAL_MS = 100
@@ -38,6 +45,7 @@ const moodOptions = [
 ]
 
 let canvas: WechatMiniprogram.Canvas | null = null
+let exportCanvas: WechatMiniprogram.Canvas | null = null
 let context: WechatMiniprogram.CanvasRenderingContext.CanvasRenderingContext2D | null =
   null
 let canvasWidth = 0
@@ -53,6 +61,7 @@ let pageVisible = true
 let pageAlive = true
 let pageEpoch = 0
 let lastLiveLevelPercent = -1
+let artworkCreatedAt: Date | null = null
 
 function initialVisualState(): VisualState {
   return createVisualState(
@@ -144,6 +153,147 @@ function initializeCanvas(): void {
     .exec()
 }
 
+function ensureExportCanvas(): Promise<WechatMiniprogram.Canvas> {
+  if (exportCanvas) {
+    return Promise.resolve(exportCanvas)
+  }
+
+  return new Promise((resolve, reject) => {
+    wx.createSelectorQuery()
+      .select('#exportCanvas')
+      .fields({ node: true }, (result) => {
+        const node = result.node as WechatMiniprogram.Canvas | undefined
+        if (!node) {
+          reject(new Error('无法创建导出画布，请稍后重试。'))
+          return
+        }
+        exportCanvas = node
+        resolve(node)
+      })
+      .exec()
+  })
+}
+
+function canvasToTempPng(
+  targetCanvas: WechatMiniprogram.Canvas,
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    wx.canvasToTempFilePath({
+      canvas: targetCanvas,
+      fileType: 'png',
+      quality: 1,
+      destWidth: MINI_EXPORT_WIDTH,
+      destHeight: MINI_EXPORT_HEIGHT,
+      success: (result) => resolve(result.tempFilePath),
+      fail: () => reject(new Error('PNG 生成失败，请稍后重试。')),
+    })
+  })
+}
+
+function saveImageToAlbum(filePath: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    wx.saveImageToPhotosAlbum({
+      filePath,
+      success: () => resolve(),
+      fail: (error) => reject(new Error(error.errMsg)),
+    })
+  })
+}
+
+function previewImage(filePath: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    wx.previewImage({
+      current: filePath,
+      urls: [filePath],
+      success: () => resolve(),
+      fail: () => reject(new Error('图片预览失败，请先尝试保存到相册。')),
+    })
+  })
+}
+
+function showShareImageMenu(
+  filePath: string,
+): Promise<'shared' | 'canceled' | 'previewed'> {
+  if (typeof wx.showShareImageMenu !== 'function') {
+    return previewImage(filePath).then(() => 'previewed')
+  }
+
+  return new Promise((resolve, reject) => {
+    wx.showShareImageMenu({
+      path: filePath,
+      success: () => resolve('shared'),
+      fail: (error) => {
+        if (error.errMsg.toLowerCase().includes('cancel')) {
+          resolve('canceled')
+          return
+        }
+        previewImage(filePath)
+          .then(() => resolve('previewed'))
+          .catch(reject)
+      },
+    })
+  })
+}
+
+function isAlbumPermissionError(message: string): boolean {
+  const normalized = message.toLowerCase()
+  return (
+    normalized.includes('auth deny') ||
+    normalized.includes('auth denied') ||
+    normalized.includes('authorize:fail')
+  )
+}
+
+async function withArtworkPng(
+  page: WechatMiniprogram.Page.TrivialInstance,
+  action: (filePath: string) => Promise<string>,
+): Promise<void> {
+  if (!summary || page.data.isExporting) {
+    return
+  }
+
+  page.setData({ isExporting: true, exportStatus: '' })
+  let filePath = ''
+
+  try {
+    const targetCanvas = await ensureExportCanvas()
+    const mood = page.data.selectedMood as Mood
+    renderMiniArtworkCard(targetCanvas, {
+      state: visualState,
+      summary,
+      mood,
+      tags: createArtworkTags(summary, mood),
+      createdAt: artworkCreatedAt ?? new Date(),
+    })
+    filePath = await canvasToTempPng(targetCanvas)
+    releaseMiniExportCanvas(targetCanvas)
+    page.setData({ exportStatus: await action(filePath) })
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : '图片处理失败，请稍后重试。'
+    page.setData({ exportStatus: message })
+  } finally {
+    if (exportCanvas && exportCanvas.width > 1) {
+      releaseMiniExportCanvas(exportCanvas)
+    }
+    if (filePath) {
+      const cleanup = await cleanupTempFile(
+        wx.getFileSystemManager(),
+        filePath,
+      )
+      if (
+        cleanup.status === 'failed' ||
+        cleanup.status === 'unconfirmed'
+      ) {
+        page.setData({
+          exportStatus: '图片操作已结束，但临时图片清理状态无法确认。',
+        })
+      }
+    }
+    page.setData({ isExporting: false })
+  }
+}
+
 function compositionRows(soundSummary: SoundSummary) {
   return [
     { label: '基底', value: Math.round(soundSummary.composition.base * 100) },
@@ -230,6 +380,8 @@ Page({
     recordingDiagnostics: [] as Array<{ label: string; value: string }>,
     hasRecordingDiagnostics: false,
     liveLevelPercent: 0,
+    isExporting: false,
+    exportStatus: '',
   },
 
   onLoad() {
@@ -274,7 +426,11 @@ Page({
     stopRendering()
     stopUiTimer()
     stopRecorderSession('unload')
+    if (exportCanvas) {
+      releaseMiniExportCanvas(exportCanvas)
+    }
     canvas = null
+    exportCanvas = null
     context = null
   },
 
@@ -380,6 +536,7 @@ Page({
     stopUiTimer()
     sampleFrames = []
     summary = null
+    artworkCreatedAt = null
     const recorderSeed = `wechat-audio-${Date.now().toString(36)}`
     const recorderPageEpoch = pageEpoch
     lastLiveLevelPercent = -1
@@ -493,6 +650,7 @@ Page({
     stopUiTimer()
     sampleFrames = []
     summary = null
+    artworkCreatedAt = null
     listeningStartedAt = Date.now()
     visualState = initialVisualState()
     this.setData({
@@ -581,10 +739,55 @@ Page({
     }
     const mood = this.data.selectedMood as Mood
     const artworkTags = createArtworkTags(summary, mood)
+    artworkCreatedAt = new Date()
     this.setData({
       ...stateFlags('result'),
       tags: [artworkTags.structure, artworkTags.movement, artworkTags.mood],
       composition: compositionRows(summary),
+      exportStatus: '',
+    })
+  },
+
+  saveArtwork() {
+    void withArtworkPng(this, async (filePath) => {
+      try {
+        await saveImageToAlbum(filePath)
+        return '图片已保存到系统相册。'
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : ''
+        if (isAlbumPermissionError(message)) {
+          wx.showModal({
+            title: '需要相册权限',
+            content:
+              '只有你主动保存作品时才使用相册权限。请在设置中允许后再次点击保存。',
+            confirmText: '去设置',
+            success: (result) => {
+              if (result.confirm) {
+                wx.openSetting({})
+              }
+            },
+          })
+          return '未获得相册权限，图片没有保存。'
+        }
+        if (message.toLowerCase().includes('cancel')) {
+          return '已取消保存。'
+        }
+        throw new Error('保存失败，可以先使用图片预览。')
+      }
+    })
+  },
+
+  shareArtwork() {
+    void withArtworkPng(this, async (filePath) => {
+      const result = await showShareImageMenu(filePath)
+      if (result === 'canceled') {
+        return '已取消分享。'
+      }
+      if (result === 'previewed') {
+        return '当前微信未打开图片分享菜单，已改为预览；可长按图片保存或分享。'
+      }
+      return '图片分享操作已完成。'
     })
   },
 
@@ -592,6 +795,7 @@ Page({
     stopUiTimer()
     sampleFrames = []
     summary = null
+    artworkCreatedAt = null
     visualState = initialVisualState()
     this.setData({
       ...stateFlags('home'),
@@ -604,6 +808,8 @@ Page({
       recordingDiagnostics: [],
       hasRecordingDiagnostics: false,
       liveLevelPercent: 0,
+      isExporting: false,
+      exportStatus: '',
     })
   },
 })

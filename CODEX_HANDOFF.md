@@ -38,7 +38,8 @@
 | W2 | 实现与自动检查完成，真机验收待完成 | 独立 W2 实现提交与 `docs/miniprogram/W2_MANUAL_TEST.md` |
 | Android W2 | 需要对最新修复重新完整验证 | 旧结果和修复前截图不能替代最新构建验收 |
 | iPhone W2 | 未验证 | 暂无可用设备，是 W2 与发布门禁 |
-| W3–W5 | 未开始 | 必须等待 W2 验证并独立提交 |
+| W3 | 实现与自动检查完成，真机验收待完成 | 独立 W3 实现提交与 `docs/miniprogram/W3_MANUAL_TEST.md` |
+| W4–W5 | 未开始 | 必须保持独立提交和发布门禁 |
 | AI-M0–AI-M5 | 已批准路线、未实施 | 必须等待 W5 完成 |
 
 里程碑状态必须以 Git 提交、当前工作区、自动测试和真机记录共同判断，不能只依据本表。
@@ -1066,7 +1067,7 @@ W2 硬门禁：
 - iPhone 尚未验证，在取得真实设备记录前不得宣称 W2 真机验收或双平台通过；
 - `npm run test`、`npm run build` 和 `npm run build:miniprogram` 必须全部成功。
 
-#### W3：导出与分享
+#### W3：导出与分享（实现完成，真机门禁待验）
 
 - 使用离屏 Canvas 合成 1080×1440 PNG；
 - 支持用户主动保存相册、微信图片分享、取消分享和失败兜底；
@@ -1109,7 +1110,7 @@ W2 硬门禁：
 | RecorderManager | W2 开始时 | 实现中 | [微信官方 RecorderManager](https://developers.weixin.qq.com/miniprogram/dev/api/media/recorder/RecorderManager.html) 与双平台真机记录 |
 | 隐私授权 | W2 开始时 | 草案已准备 | [微信官方隐私授权](https://developers.weixin.qq.com/miniprogram/dev/framework/user-privacy/PrivacyAuthorize.html) 与公众平台最终指引 |
 | 麦克风与临时文件 | W2 最新构建尚未完成复验 | 进行中 | Android/iPhone 设备、系统、微信版本及清理记录 |
-| 相册写入 | 未核对 | W3 尚未实施 | 官方相册权限说明、拒绝与撤回测试、隐私指引更新 |
+| 相册写入 | W3 实现时 | 已实现、真机待验 | 官方相册权限说明、拒绝与撤回测试、隐私指引更新 |
 | 小程序备案 | 未核对 | 未确认完成 | 工信部与公众平台当期备案要求、平台完成凭证 |
 | 体验版与审核 | 未核对 | 未开始 | 官方发布流程、上传版本号、体验记录、审核结果 |
 | AI 标识法规 | 未核对 | 未来 AI 门禁 | 届时有效的官方法规、标准及独立导出检查 |
