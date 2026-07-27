@@ -3,8 +3,9 @@ import {
   PCM_FRAME_SIZE_KB,
   PCM_SAMPLE_RATE,
   PcmFrameAnalyzer,
-  createSoundSummary,
+  createLocalSoundFingerprint,
   type AudioFrame,
+  type LocalSoundFingerprint,
   type PcmAnalyzerDiagnostics,
   type SoundSummary,
 } from '../vendor/shared-core'
@@ -38,12 +39,12 @@ export interface RecorderDiagnostics extends PcmAnalyzerDiagnostics {
 export interface RecorderSessionResult {
   kind: 'complete' | 'canceled' | 'error'
   summary?: SoundSummary
+  fingerprint?: LocalSoundFingerprint
   diagnostics: RecorderDiagnostics
   message?: string
 }
 
 export interface RecorderSessionCallbacks {
-  seed?: string
   onStart?: () => void
   onFrame?: (frame: AudioFrame) => void
 }
@@ -56,7 +57,6 @@ interface ActiveSession {
   firstChunkBytes: number
   recorderDurationMs: number
   recorderFileBytes: number
-  seed: string
   stopReason: RecorderStopReason
   started: boolean
   stopRequested: boolean
@@ -156,8 +156,8 @@ async function settleSession(
     hadFrames &&
     hasCompleteCapture &&
     cleanupConfirmed
-  const summary = canComplete
-    ? createSoundSummary(
+  const fingerprint = canComplete
+    ? createLocalSoundFingerprint(
         session.frames,
         Math.min(
           10_000,
@@ -168,9 +168,9 @@ async function settleSession(
               : analyzedDurationMs,
           ),
         ),
-        session.seed,
       )
     : undefined
+  const summary = fingerprint?.summary
 
   session.analyzer.reset()
   session.frames.length = 0
@@ -189,7 +189,12 @@ async function settleSession(
   }
 
   if (summary) {
-    session.resolve({ kind: 'complete', summary, diagnostics })
+    session.resolve({
+      kind: 'complete',
+      summary,
+      fingerprint,
+      diagnostics,
+    })
     return
   }
 
@@ -355,7 +360,6 @@ export function startRecorderSession(
       firstChunkBytes: 0,
       recorderDurationMs: 0,
       recorderFileBytes: 0,
-      seed: callbacks.seed ?? `wechat-audio-${Date.now().toString(36)}`,
       stopReason: 'complete',
       started: false,
       stopRequested: false,

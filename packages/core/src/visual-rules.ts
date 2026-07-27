@@ -2,6 +2,8 @@ import seedrandom from 'seedrandom'
 import { createMoodPalette, MOOD_PROFILES } from './mood-profiles'
 import type {
   Mood,
+  RecipeId,
+  SoundFeatureSample,
   SoundVisualInput,
   VisualLayout,
   VisualState,
@@ -126,6 +128,10 @@ export function createVisualState(
   seed: string,
   input: Partial<SoundVisualInput> = DEFAULT_VISUAL_INPUT,
   mood: Mood = 'neutral',
+  options: {
+    recipeId?: RecipeId
+    featureSamples?: SoundFeatureSample[]
+  } = {},
 ): VisualState {
   const layout = createSeededLayout(seed)
 
@@ -135,6 +141,8 @@ export function createVisualState(
     profile: MOOD_PROFILES[mood],
     palette: createMoodPalette(layout.baseHue, mood),
     layout,
+    recipeId: options.recipeId ?? 'layered-paper',
+    featureSamples: options.featureSamples?.map((sample) => ({ ...sample })) ?? [],
   }
 }
 

@@ -35,6 +35,46 @@ export interface SoundSummary {
   seed: string
 }
 
+export interface SoundFeatureSample {
+  t: number
+  loudness: number
+  lowEnergy: number
+  midEnergy: number
+  highEnergy: number
+  changeRate: number
+}
+
+export interface LocalSoundFingerprint {
+  version: 1
+  samples: SoundFeatureSample[]
+  summary: SoundSummary
+  hash: string
+}
+
+export const RECIPE_IDS = [
+  'concentric-field',
+  'flowing-ribbons',
+  'particle-constellation',
+  'layered-paper',
+  'vertical-rain',
+  'radial-pulse',
+  'fractured-grid',
+  'calm-horizon',
+] as const
+
+export type RecipeId = (typeof RECIPE_IDS)[number]
+
+export interface LocalArtworkManifest {
+  version: 1
+  mode: 'local'
+  recipeId: RecipeId
+  seed: string
+  mood: Mood
+  summary: SoundSummary
+  fingerprintHash: string
+  createdAt: number
+}
+
 export interface MoodProfile {
   id: Mood
   labelZh: string
@@ -96,4 +136,6 @@ export interface VisualState {
   profile: MoodProfile
   palette: VisualPalette
   layout: VisualLayout
+  recipeId: RecipeId
+  featureSamples: SoundFeatureSample[]
 }

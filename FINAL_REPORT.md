@@ -31,14 +31,21 @@ AI-M0 已在独立 `feat/sound-palette-ai-v0.1` 分支完成：AI feature flag �
 默认关闭；已建立固定错误码、未来契约、本地 mock Captioner/生图 provider 和幂等状态机。
 当前小程序入口、包体、网络和隐私行为没有改变，也没有真实供应商调用。
 
+AI-M1 已完成实现与自动检查：实时帧在当前会话内压缩为 20 段归一化时间声纹，使用量化
+哈希生成稳定 `local-v1` seed，不再使用时间戳作为主体构图 seed。八个固定 fixture 分别
+稳定命中同心场、流动色带、粒子星座、层叠纸面、垂直雨线、径向脉冲、碎片网格和宁静
+地平线；Mood 切换保留配方、seed、声纹和主体布局。原始帧在完成或退出后清空。
+
 ## 本次验证
 
 - 文档差异检查通过；
 - 124 个标题无重复，46 个代码围栏成对；
-- `npm run test`：16 个测试文件、58 项测试全部通过；
+- `npm run test`：18 个测试文件、66 项测试全部通过；
 - `npm run build`：成功；
 - `npm run build:miniprogram`：共享核心构建及小程序 TypeScript 检查成功。
-- 微信开发者工具预览编译成功，当前 W4 预览包 119,579 Byte。
+- `npm run check:miniprogram-release`：`ready-for-manual-gates`，小程序目录
+  145,395 Byte；相对 W5 基线新增 15,185 Byte，低于 AI-M1 新增 250KB 目标。
+- 微信开发者工具 AI-M1 预览编译成功，预览包 128,738 Byte；这不等于真机通过。
 
 ## 遗留门禁
 
@@ -47,4 +54,6 @@ AI-M0 已在独立 `feat/sound-palette-ai-v0.1` 分支完成：AI feature flag �
 - 不同声音必须产生明显数据和画面差异；
 - 临时录音文件必须确认删除，不能持续占用麦克风；
 - W3 导出图片尺寸、文字裁切、相册权限、分享取消和临时 PNG 清理需要双平台验证；
+- AI-M1 的五类声音差异、八套配方品牌一致性、飞行模式、连续十次生成和中低端机性能
+  仍需按 `docs/ai/AI_M1_MANUAL_TEST.md` 在 Android 与 iPhone 留下完整证据；
 - 上述门禁完成前不得提审、发布或宣称双平台通过。

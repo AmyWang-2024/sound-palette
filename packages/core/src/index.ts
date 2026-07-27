@@ -1,4 +1,6 @@
 export * from './mood-profiles'
+export * from './local-fingerprint'
+export * from './local-recipe-fixtures'
 export * from './pcm-analyzer'
 export * from './sample-scenes'
 export * from './sound-summary'

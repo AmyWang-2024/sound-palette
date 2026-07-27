@@ -3,14 +3,15 @@ import {
   SAMPLE_DURATION_MS,
   SAMPLE_SCENES,
   createArtworkTags,
+  createLocalSoundFingerprint,
+  createLocalVisualState,
   createSampleFrame,
-  createSampleSummary,
   createVisualState,
-  summaryToVisualInput,
   updateVisualInput,
   updateVisualMood,
   type AppState,
   type AudioFrame,
+  type LocalSoundFingerprint,
   type Mood,
   type SoundSummary,
   type VisualState,
@@ -59,6 +60,7 @@ let listeningStartedAt = 0
 let lastRenderAt = 0
 let sampleFrames: AudioFrame[] = []
 let summary: SoundSummary | null = null
+let localFingerprint: LocalSoundFingerprint | null = null
 let visualState: VisualState = initialVisualState()
 let pageVisible = true
 let pageAlive = true
@@ -427,6 +429,7 @@ Page({
       }
       sampleFrames = []
       summary = null
+      localFingerprint = null
       visualState = initialVisualState()
       this.setData({
         ...stateFlags('home'),
@@ -445,6 +448,9 @@ Page({
     stopRendering()
     stopUiTimer()
     stopRecorderSession('unload')
+    sampleFrames = []
+    summary = null
+    localFingerprint = null
     if (exportCanvas) {
       releaseMiniExportCanvas(exportCanvas)
     }
@@ -555,12 +561,12 @@ Page({
     stopUiTimer()
     sampleFrames = []
     summary = null
+    localFingerprint = null
     artworkCreatedAt = null
-    const recorderSeed = `wechat-audio-${Date.now().toString(36)}`
     const recorderPageEpoch = pageEpoch
     lastLiveLevelPercent = -1
     visualState = createVisualState(
-      recorderSeed,
+      'local-live-preview-v1',
       createSampleFrame(0, SAMPLE_SCENE_ID),
       'neutral',
     )
@@ -578,7 +584,6 @@ Page({
     })
 
     void startRecorderSession({
-      seed: recorderSeed,
       onStart: () => {
         if (!pageAlive || pageEpoch !== recorderPageEpoch) {
           return
@@ -629,7 +634,12 @@ Page({
       }
 
       const rows = diagnosticsRows(result.diagnostics)
-      if (result.kind !== 'complete' || !result.summary) {
+      if (
+        result.kind !== 'complete' ||
+        !result.summary ||
+        !result.fingerprint
+      ) {
+        localFingerprint = null
         visualState = initialVisualState()
         this.setData({
           ...stateFlags('home'),
@@ -645,9 +655,9 @@ Page({
       }
 
       summary = result.summary
-      visualState = createVisualState(
-        summary.seed,
-        summaryToVisualInput(summary),
+      localFingerprint = result.fingerprint
+      visualState = createLocalVisualState(
+        localFingerprint,
         this.data.selectedMood as Mood,
       )
       this.setData({
@@ -669,6 +679,7 @@ Page({
     stopUiTimer()
     sampleFrames = []
     summary = null
+    localFingerprint = null
     artworkCreatedAt = null
     listeningStartedAt = Date.now()
     visualState = initialVisualState()
@@ -712,14 +723,13 @@ Page({
     if (sampleFrames.length === 0) {
       sampleFrames.push(createSampleFrame(SAMPLE_DURATION_MS, SAMPLE_SCENE_ID))
     }
-    summary = createSampleSummary(
+    localFingerprint = createLocalSoundFingerprint(
       sampleFrames,
       SAMPLE_DURATION_MS,
-      SAMPLE_SCENE_ID,
     )
-    visualState = createVisualState(
-      summary.seed,
-      summaryToVisualInput(summary),
+    summary = localFingerprint.summary
+    visualState = createLocalVisualState(
+      localFingerprint,
       this.data.selectedMood as Mood,
     )
     applyState(this, 'mood')
@@ -733,6 +743,7 @@ Page({
     }
     sampleFrames = []
     summary = null
+    localFingerprint = null
     visualState = initialVisualState()
     this.setData({
       ...stateFlags('home'),
@@ -814,6 +825,7 @@ Page({
     stopUiTimer()
     sampleFrames = []
     summary = null
+    localFingerprint = null
     artworkCreatedAt = null
     visualState = initialVisualState()
     this.setData({
