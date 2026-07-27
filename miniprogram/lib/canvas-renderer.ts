@@ -16,6 +16,7 @@ export interface CanvasViewport {
 
 export interface DrawSoundPaletteOptions {
   maxParticles?: number
+  drawBackground?: boolean
 }
 
 function featureSamples(state: VisualState): SoundFeatureSample[] {
@@ -489,7 +490,9 @@ export function drawSoundPalette(
   const reactive = deriveReactiveVisualMetrics(state.input)
   const maxParticles = options.maxParticles ?? MINI_MAX_PARTICLES
   context.save()
-  drawBackground(context, viewport, state)
+  if (options.drawBackground !== false) {
+    drawBackground(context, viewport, state)
+  }
 
   switch (state.recipeId) {
     case 'concentric-field':

@@ -70,7 +70,7 @@ export interface ImageProviderResult {
   imageToken: string
   width: number
   height: number
-  mediaType: 'image/mock'
+  mediaType: 'image/mock' | 'image/webp' | 'image/jpeg'
 }
 
 export interface ImageProvider {

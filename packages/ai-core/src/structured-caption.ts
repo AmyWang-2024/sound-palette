@@ -23,6 +23,8 @@ const TRANSCRIPT_PATTERN =
   /(?:他说|她说|对话内容|谈话内容|逐字|原话|姓名|叫做|名叫|“[^”]+”|"[^"]+")/
 const IDENTITY_PATTERN =
   /(?:男性|女性|男声|女声|男孩|女孩|老人|青年|年龄|情绪诊断|抑郁|焦虑)/
+const PROMPT_INJECTION_PATTERN =
+  /(?:ignore\s+(?:all\s+)?(?:previous|prior)|system\s+prompt|developer\s+message|忽略.{0,6}(?:指令|提示)|系统提示词|开发者消息)/i
 const SPEECH_SOURCE_PATTERN = /(?:说话|谈话|对话|人声|语音|讲话)/
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -43,7 +45,8 @@ function safePhrase(value: unknown): string | null {
     !cleaned ||
     PII_PATTERN.test(cleaned) ||
     TRANSCRIPT_PATTERN.test(cleaned) ||
-    IDENTITY_PATTERN.test(cleaned)
+    IDENTITY_PATTERN.test(cleaned) ||
+    PROMPT_INJECTION_PATTERN.test(cleaned)
   ) {
     return null
   }
