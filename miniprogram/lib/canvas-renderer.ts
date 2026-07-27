@@ -13,6 +13,10 @@ export interface CanvasViewport {
   height: number
 }
 
+export interface DrawSoundPaletteOptions {
+  maxParticles?: number
+}
+
 function drawBackground(
   context: WechatMiniprogram.CanvasRenderingContext.CanvasRenderingContext2D,
   viewport: CanvasViewport,
@@ -144,10 +148,11 @@ function drawParticles(
   state: VisualState,
   timeSeconds: number,
   reactive: ReactiveVisualMetrics,
+  maxParticles: number,
 ): void {
   const density = state.profile.textureDensity * reactive.particleDensity
   const particleCount = Math.min(
-    MINI_MAX_PARTICLES,
+    Math.min(MINI_MAX_PARTICLES, Math.max(0, maxParticles)),
     Math.max(6, Math.round(state.layout.particles.length * density * 0.72)),
   )
 
@@ -219,6 +224,7 @@ export function drawSoundPalette(
   viewport: CanvasViewport,
   state: VisualState,
   timeSeconds: number,
+  options: DrawSoundPaletteOptions = {},
 ): void {
   const reactive = deriveReactiveVisualMetrics(state.input)
   context.save()
@@ -226,6 +232,13 @@ export function drawSoundPalette(
   drawBaseShapes(context, viewport, state, timeSeconds, reactive)
   drawSoundPulse(context, viewport, state, timeSeconds, reactive)
   drawFlows(context, viewport, state, timeSeconds, reactive)
-  drawParticles(context, viewport, state, timeSeconds, reactive)
+  drawParticles(
+    context,
+    viewport,
+    state,
+    timeSeconds,
+    reactive,
+    options.maxParticles ?? MINI_MAX_PARTICLES,
+  )
   context.restore()
 }

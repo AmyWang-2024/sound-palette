@@ -29,10 +29,13 @@ import {
   type RecorderDiagnostics,
 } from '../../lib/recorder-session'
 import { cleanupTempFile } from '../../lib/temp-file-cleanup'
+import {
+  selectRenderQuality,
+  type RenderQuality,
+} from '../../lib/render-quality'
 
 const SAMPLE_SCENE_ID = 'parkMorning'
 const UI_INTERVAL_MS = 100
-const RENDER_INTERVAL_MS = 1000 / 30
 
 const moodOptions = [
   { id: 'good' as Mood, label: MOOD_PROFILES.good.labelZh, detail: '更明亮、舒展' },
@@ -62,6 +65,7 @@ let pageAlive = true
 let pageEpoch = 0
 let lastLiveLevelPercent = -1
 let artworkCreatedAt: Date | null = null
+let renderQuality: RenderQuality = selectRenderQuality({})
 
 function initialVisualState(): VisualState {
   return createVisualState(
@@ -107,12 +111,14 @@ function renderLoop(timestamp = 0): void {
     return
   }
 
-  if (timestamp - lastRenderAt >= RENDER_INTERVAL_MS) {
+  const renderIntervalMs = 1_000 / renderQuality.framesPerSecond
+  if (timestamp - lastRenderAt >= renderIntervalMs) {
     drawSoundPalette(
       context,
       { width: canvasWidth, height: canvasHeight },
       visualState,
       timestamp / 1000,
+      { maxParticles: renderQuality.maxParticles },
     )
     lastRenderAt = timestamp
   }
@@ -124,7 +130,7 @@ function startRendering(): void {
   if (!canvas || renderFrameId !== null || !pageVisible) {
     return
   }
-  lastRenderAt = -RENDER_INTERVAL_MS
+  lastRenderAt = -(1_000 / renderQuality.framesPerSecond)
   renderFrameId = canvas.requestAnimationFrame(renderLoop)
 }
 
@@ -140,7 +146,20 @@ function initializeCanvas(): void {
         return
       }
 
-      const dpr = Math.min(2, Math.max(1, wx.getSystemInfoSync().pixelRatio))
+      const baseSystemInfo = wx.getSystemInfoSync()
+      const systemInfo = baseSystemInfo as typeof baseSystemInfo & {
+        benchmarkLevel?: number
+        memorySize?: number
+      }
+      renderQuality = selectRenderQuality({
+        benchmarkLevel: systemInfo.benchmarkLevel,
+        memorySizeMb: systemInfo.memorySize,
+        platform: systemInfo.platform,
+      })
+      const dpr = Math.min(
+        renderQuality.dprCap,
+        Math.max(1, systemInfo.pixelRatio),
+      )
       canvas = node
       canvasWidth = width
       canvasHeight = height
