@@ -8,6 +8,7 @@
     "test": "vitest run",
     "build": "tsc && vite build",
     "build:miniprogram": "vite build --config vite.miniprogram-core.config.ts && npm run typecheck:miniprogram",
+    "check:miniprogram-release": "node scripts/check-miniprogram-release.mjs",
     "typecheck:miniprogram": "tsc -p miniprogram/tsconfig.json",
     "preview": "vite preview"
   },
