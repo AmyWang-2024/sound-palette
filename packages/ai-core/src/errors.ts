@@ -21,6 +21,7 @@ export const AI_ERROR_CODES = [
   'AUDIO_DELETE_UNCONFIRMED',
   'IMAGE_INVALID_RESPONSE',
   'AI_LABEL_UNVERIFIED',
+  'AI_RELEASE_BLOCKED',
 ] as const
 
 export type AiErrorCode = (typeof AI_ERROR_CODES)[number]
@@ -48,6 +49,7 @@ export const AI_SAFE_MESSAGES: Record<AiErrorCode, string> = {
   AUDIO_DELETE_UNCONFIRMED: '无法确认临时声音已删除，本次结果已丢弃。',
   IMAGE_INVALID_RESPONSE: 'AI 图片格式不符合要求，可以使用本地声纹画。',
   AI_LABEL_UNVERIFIED: 'AI 标识尚未通过校验，暂时不能保存或分享。',
+  AI_RELEASE_BLOCKED: 'AI 发布门禁尚未全部通过，功能保持关闭。',
 }
 
 export class AiGenerationError extends Error {

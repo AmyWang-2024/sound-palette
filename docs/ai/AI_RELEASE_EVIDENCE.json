@@ -1,0 +1,153 @@
+{
+  "version": 1,
+  "updatedAt": "2026-07-27",
+  "gates": [
+    {
+      "gateId": "repository-tests",
+      "status": "passed",
+      "evidenceKind": "automatic",
+      "reference": "npm run test: 23 files, 117 tests",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "web-production-build",
+      "status": "passed",
+      "evidenceKind": "automatic",
+      "reference": "npm run build",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "miniprogram-production-build",
+      "status": "passed",
+      "evidenceKind": "automatic",
+      "reference": "npm run build:miniprogram",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "local-zero-network",
+      "status": "passed",
+      "evidenceKind": "automatic",
+      "reference": "privacy boundary tests and source scan",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "android-local-latest",
+      "status": "not-verified",
+      "evidenceKind": "real-device",
+      "reference": "latest AI branch local flow needs retest",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "iphone-local-latest",
+      "status": "not-verified",
+      "evidenceKind": "real-device",
+      "reference": "no iPhone device record",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "android-ai-latest",
+      "status": "not-verified",
+      "evidenceKind": "real-device",
+      "reference": "AI entry disabled and no production service",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "iphone-ai-latest",
+      "status": "not-verified",
+      "evidenceKind": "real-device",
+      "reference": "AI entry disabled and no iPhone",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "mainland-network-benchmark",
+      "status": "not-verified",
+      "evidenceKind": "operations",
+      "reference": "no production endpoint or 30-run datasets",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "privacy-platform-config",
+      "status": "not-verified",
+      "evidenceKind": "platform",
+      "reference": "draft only",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "ai-terms-approved",
+      "status": "not-verified",
+      "evidenceKind": "platform",
+      "reference": "draft only",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "miniprogram-filing",
+      "status": "not-verified",
+      "evidenceKind": "platform",
+      "reference": "no filing approval evidence",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "supplier-contracts",
+      "status": "not-verified",
+      "evidenceKind": "supplier",
+      "reference": "no provider selected or contracted",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "temporary-audio-deletion",
+      "status": "not-verified",
+      "evidenceKind": "operations",
+      "reference": "synthetic in-memory evidence only",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "ai-explicit-implicit-labels",
+      "status": "not-verified",
+      "evidenceKind": "operations",
+      "reference": "explicit Canvas label and mock gate only",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "supplier-blind-evaluation",
+      "status": "not-verified",
+      "evidenceKind": "supplier",
+      "reference": "framework only; no real images",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "production-budget-alerts",
+      "status": "not-verified",
+      "evidenceKind": "operations",
+      "reference": "in-memory controls only",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "production-service-deployed",
+      "status": "not-verified",
+      "evidenceKind": "operations",
+      "reference": "no server deployed",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "experience-version-accepted",
+      "status": "not-verified",
+      "evidenceKind": "platform",
+      "reference": "no AI experience build uploaded",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "wechat-review-approved",
+      "status": "not-verified",
+      "evidenceKind": "platform",
+      "reference": "not submitted",
+      "checkedAt": 1785157200000
+    },
+    {
+      "gateId": "administrator-published",
+      "status": "not-verified",
+      "evidenceKind": "platform",
+      "reference": "not published",
+      "checkedAt": 1785157200000
+    }
+  ]
+}
