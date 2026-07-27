@@ -1,19 +1,73 @@
 <view class="page-shell">
-  <view class="art-placeholder" aria-hidden="true">
-    <view class="orb orb-a"></view>
-    <view class="orb orb-b"></view>
-    <view class="flow-line"></view>
+  <view class="art-card">
+    <canvas
+      id="paletteCanvas"
+      class="visual-canvas"
+      type="2d"
+      aria-label="根据声音示例生成的抽象画面"
+    ></canvas>
+    <view wx:if="{{isListening}}" class="listening-overlay">
+      <text class="listening-kicker">正在感受 {{sceneLabel}}</text>
+      <text class="countdown">{{remainingSeconds}}</text>
+      <view class="progress-track">
+        <view class="progress-fill" style="width: {{progressPercent}}%;"></view>
+      </view>
+      <text class="listening-note">这是内置示例，不会使用麦克风</text>
+    </view>
   </view>
 
   <view class="content">
-    <text class="eyebrow">SOUND PALETTE · {{version}}</text>
-    <text class="title">我的声音相册</text>
-    <text class="copy">微信原生小程序工程骨架已就绪。</text>
-    <view class="gate-card">
-      <text class="gate-title">W0 账号与工程已就绪</text>
-      <text class="gate-copy">
-        中国大陆个人主体 · 工具 &gt; 图片处理 · Sound Palette
+    <block wx:if="{{isHome}}">
+      <text class="eyebrow">SOUND PALETTE · 示例模式</text>
+      <text class="title">我的声音相册</text>
+      <text class="copy">
+        先用一段“{{sceneLabel}}”示例，看看十秒声音如何长成一幅抽象画。
       </text>
-    </view>
+      <button class="primary-button" bindtap="startSample">播放十秒示例</button>
+      <text class="privacy-note">本步骤不请求麦克风，不录音，也不上传数据。</text>
+    </block>
+
+    <block wx:elif="{{isListening}}">
+      <text class="eyebrow">正在聆听示例</text>
+      <text class="state-title">让画面慢慢浮现</text>
+      <text class="copy">声音的厚度、流动与明亮细节正在改变同一幅构图。</text>
+    </block>
+
+    <block wx:elif="{{isMood}}">
+      <text class="eyebrow">声音已经有了形状</text>
+      <text class="state-title">此刻感觉如何？</text>
+      <text class="copy">选择只改变色彩、光线与运动倾向，画面的构图不会跳变。</text>
+      <view class="mood-list">
+        <button
+          wx:for="{{moodOptions}}"
+          wx:key="id"
+          class="mood-option {{selectedMood === item.id ? 'is-selected' : ''}}"
+          data-mood="{{item.id}}"
+          bindtap="selectMood"
+        >
+          <text class="mood-label">{{item.label}}</text>
+          <text class="mood-detail">{{item.detail}}</text>
+        </button>
+      </view>
+      <button class="primary-button" bindtap="showResult">收下这张声音相片</button>
+    </block>
+
+    <block wx:elif="{{isResult}}">
+      <text class="eyebrow">MY SOUND ALBUM · 001</text>
+      <text class="state-title">十秒，留住一个瞬间</text>
+      <view class="tag-list">
+        <text wx:for="{{tags}}" wx:key="*this" class="tag">{{item}}</text>
+      </view>
+      <view class="composition-card">
+        <view wx:for="{{composition}}" wx:key="label" class="composition-row">
+          <text>{{item.label}}</text>
+          <view class="composition-track">
+            <view class="composition-fill" style="width: {{item.value}}%;"></view>
+          </view>
+          <text>{{item.value}}%</text>
+        </view>
+      </view>
+      <button class="secondary-button" bindtap="restart">再听一个示例</button>
+    </block>
   </view>
 </view>

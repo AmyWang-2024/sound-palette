@@ -9,5 +9,10 @@
     "skipLibCheck": true
   },
   "files": ["app.d.ts"],
-  "include": ["**/*.ts", "**/*.d.ts"]
+  "include": [
+    "**/*.ts",
+    "**/*.d.ts",
+    "../packages/core/src/**/*.ts",
+    "../packages/core/src/**/*.d.ts"
+  ]
 }
