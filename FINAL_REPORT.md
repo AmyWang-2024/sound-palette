@@ -27,11 +27,15 @@ W5 仓库准备已完成：提供发布检查命令、平台隐私字段、备�
 证据表。发布检查返回 `ready-for-manual-gates`，扫描的 miniprogram 目录为 130,210 Byte。
 未上传开发版本、未设置体验版、未提审、未发布。
 
+AI-M0 已在独立 `feat/sound-palette-ai-v0.1` 分支完成：AI feature flag 和真实供应商开关
+默认关闭；已建立固定错误码、未来契约、本地 mock Captioner/生图 provider 和幂等状态机。
+当前小程序入口、包体、网络和隐私行为没有改变，也没有真实供应商调用。
+
 ## 本次验证
 
 - 文档差异检查通过；
 - 124 个标题无重复，46 个代码围栏成对；
-- `npm run test`：15 个测试文件、53 项测试全部通过；
+- `npm run test`：16 个测试文件、58 项测试全部通过；
 - `npm run build`：成功；
 - `npm run build:miniprogram`：共享核心构建及小程序 TypeScript 检查成功。
 - 微信开发者工具预览编译成功，当前 W4 预览包 119,579 Byte。
